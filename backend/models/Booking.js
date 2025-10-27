@@ -1,5 +1,5 @@
 // ============================================
-// File: backend/models/booking.js
+// File: backend/models/Booking.js
 // COMPLETE BOOKING SCHEMA
 // ============================================
 
