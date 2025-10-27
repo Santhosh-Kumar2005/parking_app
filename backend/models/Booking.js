@@ -1,6 +1,6 @@
 // ============================================
 // File: backend/models/Booking.js
-// COMPLETE BOOKING SCHEMA
+// UPDATED WITH LIFT ASSIGNMENT FIELDS
 // ============================================
 
 const mongoose = require('mongoose');
@@ -36,6 +36,18 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     default: '2',
   },
+  // ============================================
+  // NEW: LIFT ASSIGNMENT FIELDS
+  // ============================================
+  assignedLift: {
+    type: String,
+    default: null,
+  },
+  liftNumber: {
+    type: Number,
+    default: null,
+  },
+  // ============================================
   status: {
     type: String,
     enum: ['payment_pending', 'paid', 'parked', 'completed', 'cancelled'],
@@ -64,13 +76,14 @@ const bookingSchema = new mongoose.Schema({
     default: 0,
   },
 }, {
-  timestamps: true, // Adds createdAt and updatedAt
+  timestamps: true,
 });
 
 // Index for faster queries
 bookingSchema.index({ userId: 1, status: 1 });
 bookingSchema.index({ vehicleNumber: 1, status: 1 });
 bookingSchema.index({ blockId: 1, status: 1 });
+bookingSchema.index({ assignedLift: 1 }); // NEW INDEX
 
 const Booking = mongoose.model('Booking', bookingSchema);
 

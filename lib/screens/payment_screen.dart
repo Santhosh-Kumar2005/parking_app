@@ -160,7 +160,11 @@ Time: ${DateTime.now().toString()}
               color: Colors.green.shade50,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_circle, color: Colors.green, size: 80),
+            child: const Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 80,
+            ),
           ),
 
           const SizedBox(height: 24),

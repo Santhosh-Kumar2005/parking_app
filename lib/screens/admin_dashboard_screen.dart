@@ -62,25 +62,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
         token: token,
       );
       // Sort lots by ID for consistent sequential numbering
-      final sortedLots = fetchedLots..sort((a, b) => (a.id ?? '').compareTo(b.id ?? ''));
+      final sortedLots = fetchedLots
+        ..sort((a, b) => (a.id ?? '').compareTo(b.id ?? ''));
       // Assign sequential lot numbers
       lots = sortedLots.asMap().entries.map((entry) {
         final lot = entry.value;
         lot.lotNumber = (entry.key + 1).toString(); // 1, 2, 3...
-        lot.code = lot.code ?? 'LOT-${lot.id?.substring(0, 4).toUpperCase() ?? 'N/A'}';
+        lot.code =
+            lot.code ?? 'LOT-${lot.id?.substring(0, 4).toUpperCase() ?? 'N/A'}';
         return lot;
       }).toList();
 
       final fetchedSpots = await ApiService.getSpotsWithDetails(token: token);
       spotsWithDetails = fetchedSpots.map((spot) {
-              // Find lot number
-              final lotId = spot['lotId']?.toString() ?? '';
-              final matchingLot = lots.firstWhere((lot) => lot.id == lotId, orElse: () => ParkingLot());
-              final lotNum = matchingLot.lotNumber ?? 'N/A';
-              final spotIndex = spot['spotIndex'] ?? 1; // From backend, fallback 1
-              spot['spotCode'] = '$lotNum-$spotIndex'; // e.g., "1-1"
-              return spot;
-            }).toList();
+        // Find lot number
+        final lotId = spot['lotId']?.toString() ?? '';
+        final matchingLot = lots.firstWhere(
+          (lot) => lot.id == lotId,
+          orElse: () => ParkingLot(),
+        );
+        final lotNum = matchingLot.lotNumber ?? 'N/A';
+        final spotIndex = spot['spotIndex'] ?? 1; // From backend, fallback 1
+        spot['spotCode'] = '$lotNum-$spotIndex'; // e.g., "1-1"
+        return spot;
+      }).toList();
 
       final fetchedSummary = await ApiService.getSummary(token: token);
       summary = fetchedSummary ?? {};
@@ -131,14 +136,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 gradient: LinearGradient(
                   colors: [Colors.blue.shade600, Colors.blue.shade800],
                 ),
-                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      const Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
+                      const Icon(
+                        Icons.admin_panel_settings,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                       const SizedBox(width: 12),
                       const Expanded(
                         child: Text(
@@ -184,7 +199,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               height: 50,
               decoration: const BoxDecoration(
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
               ),
               child: TabBar(
                 controller: _tabController,
@@ -192,7 +213,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 unselectedLabelColor: Colors.grey.shade600,
                 indicatorColor: Colors.blue.shade700,
                 indicatorWeight: 3,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
                 tabs: const [
                   Tab(text: 'Parking Lots'),
                   Tab(text: 'Parking Spots'),
@@ -202,7 +226,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             ),
             Expanded(
               child: _isLoading
-                  ? Center(child: CircularProgressIndicator(color: Colors.blue.shade600))
+                  ? Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.blue.shade600,
+                      ),
+                    )
                   : TabBarView(
                       controller: _tabController,
                       children: [
@@ -231,7 +259,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               decoration: InputDecoration(
                 hintText: 'Search by lot or location',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onChanged: (value) => _loadData(query: value),
             ),
@@ -252,32 +282,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 rows: lots.asMap().entries.map<DataRow>((entry) {
                   final index = entry.key + 1; // Sequential 1,2,3...
                   final lot = entry.value;
-                  return DataRow(cells: [
-                    DataCell(Text('$index')), // Sequential number
-                    DataCell(Text(lot.primeLocationName ?? 'N/A')),
-                    DataCell(Text('₹${lot.price ?? 0}')),
-                    DataCell(Text('${lot.address ?? 'N/A'}, ${lot.pinCode ?? 'N/A'}')),
-                    DataCell(Text(lot.pinCode ?? 'N/A')),
-                    DataCell(Text('${lot.maximumNumberOfSpots ?? 0}')),
-                    DataCell(Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () async {
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => EditLotScreen(lot: lot, onUpdated: _loadData)),
-                            );
-                            if (result == true) _loadData();
-                          },
+                  return DataRow(
+                    cells: [
+                      DataCell(Text('$index')), // Sequential number
+                      DataCell(Text(lot.primeLocationName ?? 'N/A')),
+                      DataCell(Text('₹${lot.price ?? 0}')),
+                      DataCell(
+                        Text(
+                          '${lot.address ?? 'N/A'}, ${lot.pinCode ?? 'N/A'}',
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteLot(lot.id ?? ''),
+                      ),
+                      DataCell(Text(lot.pinCode ?? 'N/A')),
+                      DataCell(Text('${lot.maximumNumberOfSpots ?? 0}')),
+                      DataCell(
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => EditLotScreen(
+                                      lot: lot,
+                                      onUpdated: _loadData,
+                                    ),
+                                  ),
+                                );
+                                if (result == true) _loadData();
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteLot(lot.id ?? ''),
+                            ),
+                          ],
                         ),
-                      ],
-                    )),
-                  ]);
+                      ),
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -299,7 +342,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               decoration: InputDecoration(
                 hintText: 'Search spots...',
                 prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onChanged: (value) => _loadData(query: value),
             ),
@@ -318,30 +363,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   DataColumn(label: Text('Action')),
                 ],
                 rows: spotsWithDetails.map<DataRow>((spot) {
-                  final spotCode = spot['spotCode'] ?? 'N/A'; // Computed as "1-1"
+                  final spotCode =
+                      spot['spotCode'] ?? 'N/A'; // Computed as "1-1"
                   final status = spot['status'] ?? 'Available';
                   final user = spot['username'] ?? '-';
                   final vehicle = spot['vehicleNumber'] ?? '-';
                   final parkingTime = spot['parkingTimestamp'] ?? '-';
-                  return DataRow(cells: [
-                    DataCell(Text(spotCode)),
-                    DataCell(Text(spot['primeLocationName'] ?? 'N/A')),
-                    DataCell(Text(status)),
-                    DataCell(Text(user)),
-                    DataCell(Text(vehicle)),
-                    DataCell(Text(parkingTime)),
-                    DataCell(
-                      IconButton(
-                        icon: const Icon(Icons.details, color: Colors.blue),
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => SpotDetailsScreen(spotId: spot['_id'] ?? spot['id']),
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(spotCode)),
+                      DataCell(Text(spot['primeLocationName'] ?? 'N/A')),
+                      DataCell(Text(status)),
+                      DataCell(Text(user)),
+                      DataCell(Text(vehicle)),
+                      DataCell(Text(parkingTime)),
+                      DataCell(
+                        IconButton(
+                          icon: const Icon(Icons.details, color: Colors.blue),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SpotDetailsScreen(
+                                spotId: spot['_id'] ?? spot['id'],
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ]);
+                    ],
+                  );
                 }).toList(),
               ),
             ),
@@ -359,12 +409,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     final totalRevenue = (summary['totalRevenue'] ?? 0).toDouble();
 
     // Handle array format from backend
-    final userList = userRevenuesRaw is List 
-      ? (userRevenuesRaw).cast<Map<String, dynamic>>() 
-      : [];
-    final lotList = lotRevenuesRaw is List 
-      ? (lotRevenuesRaw).cast<Map<String, dynamic>>() 
-      : [];
+    final userList = userRevenuesRaw is List
+        ? (userRevenuesRaw).cast<Map<String, dynamic>>()
+        : [];
+    final lotList = lotRevenuesRaw is List
+        ? (lotRevenuesRaw).cast<Map<String, dynamic>>()
+        : [];
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -378,14 +428,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 const SizedBox(width: 12),
                 Text(
                   'Revenue Statistics',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green.shade800),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Card(
               elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
@@ -393,13 +449,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                   children: [
                     Text(
                       'Total Revenue: ₹${totalRevenue.toStringAsFixed(2)}',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green.shade600),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade600,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     // Users Revenue Table
                     Text(
                       'Registered Users Revenue',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (userList.isEmpty)
@@ -409,20 +473,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
                           columns: const [
-                            DataColumn(label: Text('User #', style: TextStyle(fontWeight: FontWeight.bold))), // Sequential number
-                            DataColumn(label: Text('Username', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                              label: Text(
+                                'User #',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ), // Sequential number
+                            DataColumn(
+                              label: Text(
+                                'Username',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Revenue',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ],
-                          rows: userList.asMap().entries.take(10).map<DataRow>((entry) {
+                          rows: userList.asMap().entries.take(10).map<DataRow>((
+                            entry,
+                          ) {
                             final index = entry.key + 1; // Sequential 1,2,3...
                             final user = entry.value;
                             final username = user['username'] ?? 'Unknown';
-                            final revenue = (user['revenue'] as num?)?.toDouble() ?? 0.0;
-                            return DataRow(cells: [
-                              DataCell(Text('$index')), // Sequential ID
-                              DataCell(Text(username)),
-                              DataCell(Text('₹${revenue.toStringAsFixed(2)}')),
-                            ]);
+                            final revenue =
+                                (user['revenue'] as num?)?.toDouble() ?? 0.0;
+                            return DataRow(
+                              cells: [
+                                DataCell(Text('$index')), // Sequential ID
+                                DataCell(Text(username)),
+                                DataCell(
+                                  Text('₹${revenue.toStringAsFixed(2)}'),
+                                ),
+                              ],
+                            );
                           }).toList(),
                         ),
                       ),
@@ -430,7 +516,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     // Lots Revenue Table
                     Text(
                       'Lot Revenue',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade700,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     if (lotList.isEmpty)
@@ -440,20 +530,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
                           columns: const [
-                            DataColumn(label: Text('Lot #', style: TextStyle(fontWeight: FontWeight.bold))), // Sequential number
-                            DataColumn(label: Text('Lot Name', style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(
+                              label: Text(
+                                'Lot #',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ), // Sequential number
+                            DataColumn(
+                              label: Text(
+                                'Lot Name',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Revenue',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ],
-                          rows: lotList.asMap().entries.take(10).map<DataRow>((entry) {
+                          rows: lotList.asMap().entries.take(10).map<DataRow>((
+                            entry,
+                          ) {
                             final index = entry.key + 1; // Sequential 1,2,3...
                             final lot = entry.value;
                             final lotName = lot['lotName'] ?? 'Unknown';
-                            final revenue = (lot['revenue'] as num?)?.toDouble() ?? 0.0;
-                            return DataRow(cells: [
-                              DataCell(Text('$index')), // Sequential ID
-                              DataCell(Text(lotName)),
-                              DataCell(Text('₹${revenue.toStringAsFixed(2)}')),
-                            ]);
+                            final revenue =
+                                (lot['revenue'] as num?)?.toDouble() ?? 0.0;
+                            return DataRow(
+                              cells: [
+                                DataCell(Text('$index')), // Sequential ID
+                                DataCell(Text(lotName)),
+                                DataCell(
+                                  Text('₹${revenue.toStringAsFixed(2)}'),
+                                ),
+                              ],
+                            );
                           }).toList(),
                         ),
                       ),
@@ -490,10 +602,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     if (confirm == true) {
       final success = await ApiService.deleteParkingLot(id);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lot deleted!')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Lot deleted!')));
         _loadData();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Delete failed.')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Delete failed.')));
       }
     }
   }

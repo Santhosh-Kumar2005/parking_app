@@ -71,12 +71,16 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                           controller: _usernameController,
                           decoration: InputDecoration(
                             labelText: 'Username',
-                            prefixIcon: Icon(Icons.person, color: Colors.green.shade600),
+                            prefixIcon: Icon(
+                              Icons.person,
+                              color: Colors.green.shade600,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
+                          validator: (value) =>
+                              value?.isEmpty ?? true ? 'Required' : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -84,13 +88,20 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                           obscureText: _obscurePassword, // Toggle visibility
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock, color: Colors.green.shade600),
+                            prefixIcon: Icon(
+                              Icons.lock,
+                              color: Colors.green.shade600,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
                                 color: Colors.green.shade600,
                               ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -98,9 +109,13 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                           ),
                           validator: (value) {
                             if (value?.isEmpty ?? true) return 'Required';
-                            if (value!.length < 8) return 'At least 8 characters';
-                            final regex = RegExp(r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!]{7,15}$');
-                            if (!regex.hasMatch(value)) return 'Must have uppercase, lowercase, digit, special char, 7-15 chars';
+                            if (value!.length < 8)
+                              return 'At least 8 characters';
+                            final regex = RegExp(
+                              r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!]{7,15}$',
+                            );
+                            if (!regex.hasMatch(value))
+                              return 'Must have uppercase, lowercase, digit, special char, 7-15 chars';
                             return null;
                           },
                         ),
@@ -118,7 +133,11 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                             ),
                             child: const Text(
                               'Register User',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -126,7 +145,9 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
                         TextButton(
                           onPressed: () => Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const LoginScreen(),
+                            ),
                           ),
                           child: Text(
                             'Already have an account? Login',
@@ -148,15 +169,18 @@ class _UserRegisterScreenState extends State<UserRegisterScreen> {
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       final success = await context.read<AuthService>().register(
-            _usernameController.text,
-            _passwordController.text,
-            'user',
-          );
+        _usernameController.text,
+        _passwordController.text,
+        'user',
+      );
       if (success) {
         Navigator.pushReplacementNamed(context, '/user');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration failed'), backgroundColor: Colors.red),
+          const SnackBar(
+            content: Text('Registration failed'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

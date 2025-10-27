@@ -44,7 +44,9 @@ class _EditLotScreenState extends State<EditLotScreen> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Prime Location Name'),
+                decoration: const InputDecoration(
+                  labelText: 'Prime Location Name',
+                ),
               ),
               TextFormField(
                 controller: _priceController,

@@ -44,6 +44,7 @@ const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const bookingRoutes = require('./routes/bookings');
+const liftRoutes = require('./routes/lifts'); // ⭐ NEW LIFT ROUTES
 
 // ========================================
 // ROOT TEST ROUTE
@@ -58,6 +59,7 @@ app.get('/', (req, res) => {
       parkingLots: '/parking-lots',
       parkingSpots: '/parking-spots',
       bookings: '/bookings',
+      lifts: '/lifts', // ⭐ NEW
       summary: '/summary'
     }
   });
@@ -86,6 +88,9 @@ app.get('/summary', adminRoutes);
 // Booking routes (✅ Frontend calls: /bookings/*)
 app.use('/bookings', bookingRoutes);
 
+// ⭐ LIFT ROUTES (NEW - Frontend calls: /lifts/*)
+app.use('/lifts', liftRoutes);
+
 // User routes (if needed)
 app.use('/users', userRoutes);
 
@@ -98,7 +103,7 @@ app.use((req, res) => {
     error: 'Route not found',
     path: req.path,
     method: req.method,
-    availableRoutes: ['/auth', '/parking-lots', '/parking-spots', '/bookings', '/summary']
+    availableRoutes: ['/auth', '/parking-lots', '/parking-spots', '/bookings', '/lifts', '/summary']
   });
 });
 
@@ -122,4 +127,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 CORS enabled for all origins`);
+  console.log(`⭐ Lift system enabled on /lifts`);
 });
