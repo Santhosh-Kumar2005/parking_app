@@ -1,175 +1,674 @@
+// ============================================
+// File: lib/screens/user_dashboard_screen.dart - PART 1
+// COMPLETE USER DASHBOARD - Copy this entire file
+// ============================================
+
+import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:fl_chart/fl_chart.dart';
-import '../services/auth_service.dart';
 import '../services/api_service.dart';
-import '../models/parking_lot.dart';
-import '../models/reservation.dart';
-import '../models/parking_spot.dart';
+import '../services/auth_service.dart';
+import '../utils/vehicle_validation.dart';
+import 'package:http/http.dart' as http;
+import 'payment_screen.dart';
 
 class UserDashboardScreen extends StatefulWidget {
+  const UserDashboardScreen({Key? key}) : super(key: key);
+
   @override
   _UserDashboardScreenState createState() => _UserDashboardScreenState();
 }
 
-class _UserDashboardScreenState extends State<UserDashboardScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  List<ParkingLot> lots = [];
-  List<Map<String, dynamic>> spotsWithDetails = [];
-  List<Reservation> history = [];
-  Reservation? currentReservation;
-  Map<String, dynamic> summary = {};
-  final _searchController = TextEditingController();
-  final _vehicleController = TextEditingController();
-  String? selectedLotId;
-  String query = '';
-  bool _isLoading = false;
+class _UserDashboardScreenState extends State<UserDashboardScreen> {
+  // ============================================
+  // STATE VARIABLES
+  // ============================================
+  int totalSlots = 160;
+  int availableSlots = 160;
+  int occupiedSlots = 0;
 
+  Map<String, Map<String, dynamic>> blockData = {
+    'BLOCK-A': {'available': 40, 'occupied': 0, 'total': 40},
+    'BLOCK-B': {'available': 40, 'occupied': 0, 'total': 40},
+    'BLOCK-C': {'available': 40, 'occupied': 0, 'total': 40},
+    'BLOCK-D': {'available': 40, 'occupied': 0, 'total': 40},
+  };
+
+  List<Map<String, dynamic>> userBookings = [];
+  bool isLoading = true;
+  bool isLoadingBookings = false;
+  Timer? _refreshTimer;
+  final TextEditingController _vehicleController = TextEditingController();
+  int _selectedTabIndex = 0;
+
+  // ============================================
+  // LIFECYCLE METHODS
+  // ============================================
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _loadData();
+    _fetchParkingStats();
+    _loadUserBookings();
+
+    // Auto-refresh every 5 seconds
+    _refreshTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+      _fetchParkingStats();
+      if (_selectedTabIndex == 1) {
+        _loadUserBookings();
+      }
+    });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _searchController.dispose();
+    _refreshTimer?.cancel();
     _vehicleController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    if (_isLoading || !mounted) return;
-    setState(() => _isLoading = true);
-    final auth = context.read<AuthService>();
-    final userId = auth.userId ?? '';
-    final token = auth.token;
-
+  // ============================================
+  // FETCH PARKING STATISTICS
+  // ============================================
+  Future<void> _fetchParkingStats() async {
     try {
-      final fetchedLots = await ApiService.getParkingLots(query: query, token: token);
-      // Sort lots by ID for consistent sequential numbering
-      final sortedLots = fetchedLots..sort((a, b) => (a.id ?? '').compareTo(b.id ?? ''));
-      // Assign sequential lot numbers
-      lots = sortedLots.asMap().entries.map((entry) {
-        final lot = entry.value;
-        lot.lotNumber = (entry.key + 1).toString(); // 1, 2, 3...
-        lot.code = lot.code ?? 'LOT-${lot.id?.substring(0, 4).toUpperCase() ?? 'N/A'}'; // Keep for fallback if needed
-        return lot;
-      }).toList();
+      final response = await ApiService.getParkingStats();
 
-      if (lots.isEmpty) {
-        print('No lots loaded. Check API or add sample data.');
+      if (response['success'] == true) {
+        final stats = response['stats'];
+
+        if (mounted) {
+          setState(() {
+            totalSlots = stats['total'] ?? 160;
+            occupiedSlots = stats['occupied'] ?? 0;
+            availableSlots = stats['available'] ?? 160;
+
+            // Reset all blocks to default
+            blockData = {
+              'BLOCK-A': {'available': 40, 'occupied': 0, 'total': 40},
+              'BLOCK-B': {'available': 40, 'occupied': 0, 'total': 40},
+              'BLOCK-C': {'available': 40, 'occupied': 0, 'total': 40},
+              'BLOCK-D': {'available': 40, 'occupied': 0, 'total': 40},
+            };
+
+            // Update with actual data from backend
+            if (stats['blocks'] != null) {
+              for (var block in stats['blocks']) {
+                String blockId = block['_id'] ?? block['blockId'];
+                int occupied = block['count'] ?? 0;
+                int available = 40 - occupied;
+
+                if (blockData.containsKey(blockId)) {
+                  blockData[blockId] = {
+                    'available': available,
+                    'occupied': occupied,
+                    'total': 40,
+                  };
+                }
+              }
+            }
+
+            isLoading = false;
+          });
+        }
       }
-      spotsWithDetails = await ApiService.getSpotsWithDetails(token: token);
-      if (spotsWithDetails is! List<Map<String, dynamic>>) {
-        print('Invalid spots type: ${spotsWithDetails.runtimeType} - defaulting to []');
-        spotsWithDetails = [];
-      }
-      // Format spot codes (1-1 format)
-      for (var spot in spotsWithDetails) {
-        final lotId = spot['lotId']?.toString() ?? '';
-        final matchingLot = lots.firstWhere((lot) => lot.id == lotId, orElse: () => ParkingLot());
-        final lotNum = matchingLot.lotNumber ?? 'N/A';
-        final spotIndex = spot['spotIndex'] ?? 1;
-        spot['spotCode'] = '$lotNum-$spotIndex'; // e.g., "1-1"
-      }
-      if (spotsWithDetails.isEmpty) {
-        print('No spots loaded. Check API or add sample data.');
-      }
-      final reservationsRaw = await ApiService.getReservations(
-        userId: userId,
-        token: token,
-      );
-      history = reservationsRaw
-          .where((r) => r is Map<String, dynamic>)
-          .map((r) => Reservation.fromJson(r as Map<String, dynamic>))
-          .whereType<Reservation>()
-          .toList();
-      if (history.isEmpty) {
-        print('No history loaded. Check API or make reservations.');
-      }
-      currentReservation = history.firstWhere(
-        (r) => r.leavingTimestamp == null,
-        orElse: () => Reservation(),
-      );
-      summary = await ApiService.getSummary(token: token) ?? {};
-      print('Summary: $summary');
     } catch (e) {
-      print('_loadData error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Load failed: $e. Check console for details.')),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      print('Error fetching stats: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
-  Future<void> _reserveSpot() async {
-    if (selectedLotId == null || _vehicleController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select lot and enter vehicle number.')),
+  // ============================================
+  // LOAD USER'S BOOKINGS
+  // ============================================
+  Future<void> _loadUserBookings() async {
+    final auth = context.read<AuthService>();
+    final userId = auth.userId;
+
+    if (userId == null) return;
+
+    setState(() => isLoadingBookings = true);
+
+    try {
+      final bookings = await ApiService.getUserBookings(userId);
+
+      if (mounted) {
+        setState(() {
+          userBookings = bookings;
+          isLoadingBookings = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading bookings: $e');
+      if (mounted) {
+        setState(() {
+          isLoadingBookings = false;
+        });
+      }
+    }
+  }
+
+  // ============================================
+  // RESERVE PARKING SPOT
+  // ============================================
+  Future<void> _reserveSpot(String blockId) async {
+    final auth = context.read<AuthService>();
+    final userId = auth.userId;
+
+    if (userId == null) {
+      _showSnackBar('User ID not found. Please login again.', Colors.red);
+      return;
+    }
+
+    String vehicleNumber = _vehicleController.text.trim();
+
+    // Validation 1: Check if empty
+    if (vehicleNumber.isEmpty) {
+      _showSnackBar('Please enter vehicle number', Colors.red);
+      return;
+    }
+
+    // Validation 2: Check format using utility
+    if (!VehicleValidation.isValid(vehicleNumber)) {
+      _showDialog(
+        'Invalid Vehicle Number',
+        VehicleValidation.getErrorMessage(),
+        Colors.red,
       );
       return;
     }
 
-    setState(() => _isLoading = true);
-    final token = context.read<AuthService>().token;
-    final success = await ApiService.reserveSpot(
-      selectedLotId!,
-      _vehicleController.text,
-      token: token,
-    );
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Spot reserved successfully!')),
-      );
-      _vehicleController.clear();
-      setState(() => selectedLotId = null);
-      await _loadData();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to reserve spot. Check vehicle format.')),
-      );
+    // Validation 3: Check if slots available
+    if (blockData[blockId]!['available'] <= 0) {
+      _showSnackBar('No slots available in $blockId', Colors.red);
+      return;
     }
-    setState(() => _isLoading = false);
+
+    // Format vehicle number
+    vehicleNumber = VehicleValidation.format(vehicleNumber);
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Creating booking...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Create booking via API
+      final response = await ApiService.createBooking(
+        userId: userId,
+        vehicleNumber: vehicleNumber,
+        blockId: blockId,
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (response['success'] == true) {
+        // Immediately refresh stats
+        await _fetchParkingStats();
+
+        // Clear vehicle number field
+        _vehicleController.clear();
+
+        // Navigate to payment screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentScreen(
+              bookingId: response['booking']['_id'],
+              bookingData: response['booking'],
+            ),
+          ),
+        ).then((_) {
+          // Refresh stats and bookings when returning from payment
+          _fetchParkingStats();
+          _loadUserBookings();
+        });
+      }
+    } catch (e) {
+      // Close loading dialog
+      Navigator.pop(context);
+      _showSnackBar('Booking failed: ${e.toString()}', Colors.red);
+    }
   }
 
-  Future<void> _releaseSpot(Reservation res) async {
-    if (!mounted || res.id == null) return;
-    setState(() => _isLoading = true);
-    final auth = context.read<AuthService>();
-    final token = auth.token;
-    final response = await ApiService.releaseReservation(res.id!, token: token);
-    if (response != null && response['message'] == 'Released') {
-      final cost = (response['cost'] as num?)?.toDouble() ?? 0.0;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Spot released! Cost: ₹${cost.toStringAsFixed(2)}'),
-          backgroundColor: Colors.green,
+  // ============================================
+  // SHOW RESERVE DIALOG
+  // ============================================
+  void _showReserveDialog(String blockId) {
+    _vehicleController.clear();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.local_parking, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Reserve Spot in $blockId'),
+          ],
         ),
-      );
-      await _loadData();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to release spot.'), backgroundColor: Colors.red),
-      );
-    }
-    setState(() => _isLoading = false);
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Available: ${blockData[blockId]!['available']} / 40 slots',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            TextField(
+              controller: _vehicleController,
+              decoration: InputDecoration(
+                labelText: 'Vehicle Number',
+                hintText: 'TN12AB1234',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                prefixIcon: Icon(Icons.directions_car),
+                suffixIcon: IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () => _vehicleController.clear(),
+                ),
+              ),
+              textCapitalization: TextCapitalization.characters,
+              onChanged: (value) {
+                // Auto-format as user types
+                if (value.length >= 4) {
+                  String formatted = VehicleValidation.format(value);
+                  if (formatted != value) {
+                    _vehicleController.value = TextEditingValue(
+                      text: formatted,
+                      selection: TextSelection.collapsed(
+                        offset: formatted.length,
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                SizedBox(width: 4),
+                Text(
+                  'Format: TN-12-AB-1234',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _reserveSpot(blockId);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            icon: Icon(Icons.payment),
+            label: Text('Proceed to Payment'),
+          ),
+        ],
+      ),
+    );
   }
+
+  // ============================================
+  // UTILITY METHODS
+  // ============================================
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showDialog(String title, String message, Color color) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: color),
+            SizedBox(width: 8),
+            Flexible(child: Text(title)),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================
+  // RELEASE/EXIT PARKING SPOT
+  // ============================================
 
   Future<void> _logout() async {
     final auth = context.read<AuthService>();
     auth.logout();
     ApiService.logout();
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Logged out successfully!'), backgroundColor: Colors.green),
-    );
   }
 
+  Future<void> _releaseParking(Map<String, dynamic> booking) async {
+    // Show vehicle type selection dialog first
+    String? vehicleType = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.exit_to_app, color: Colors.orange),
+            SizedBox(width: 8),
+            Text('Exit Parking'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Select your vehicle type to calculate final charges',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(context, 'CAR'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: Icon(Icons.directions_car),
+                    label: Text('CAR\n₹50/hr', textAlign: TextAlign.center),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.pop(context, 'BIKE'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    icon: Icon(Icons.two_wheeler),
+                    label: Text('BIKE\n₹25/hr', textAlign: TextAlign.center),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (vehicleType == null) return;
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Calculating charges...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Call release API
+      final response = await http.post(
+        Uri.parse('${ApiService.baseUrl}/bookings/${booking['_id']}/release'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'vehicleType': vehicleType}),
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data['success'] == true) {
+          final cost = data['cost'];
+          final duration = data['duration'];
+
+          // Show success dialog with cost
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text('Exit Successful'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Vehicle:', style: TextStyle(fontSize: 14)),
+                            Text(
+                              booking['vehicleNumber'],
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Divider(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Duration:', style: TextStyle(fontSize: 14)),
+                            Text(
+                              '$duration hours',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Divider(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Type:', style: TextStyle(fontSize: 14)),
+                            Text(
+                              vehicleType,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Divider(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Total Cost:',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '₹$cost',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                      SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          'Slot has been released successfully',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _fetchParkingStats();
+                    _loadUserBookings();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text('Done'),
+                ),
+              ],
+            ),
+          );
+        }
+      } else {
+        throw Exception('Release failed');
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      Navigator.pop(context);
+
+      _showSnackBar('Release failed: ${e.toString()}', Colors.red);
+    }
+  }
+
+  // ============================================
+  // PART 1 ENDS HERE - Continue to Part 2 for UI
+  // ============================================
+
+  // ============================================
+  // PART 2 - UI BUILD METHODS (continues from Part 1)
+  // Add this after the _logout() method in Part 1
+  // ============================================
+
+  // ============================================
+  // BUILD UI
+  // ============================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,56 +680,147 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
             colors: [Colors.blue.shade50, Colors.white],
           ),
         ),
-        child: Column(
-          children: [
-            // Custom AppBar
-            Container(
-              height: kToolbarHeight + MediaQuery.of(context).padding.top,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.blue.shade600, Colors.blue.shade800],
-                ),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Custom AppBar
+              _buildAppBar(),
+
+              // Tab Navigation
+              _buildTabBar(),
+
+              // Content
+              Expanded(
+                child: isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : _selectedTabIndex == 0
+                    ? _buildDashboardTab()
+                    : _buildBookingsTab(),
               ),
-              child: SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================
+  // CUSTOM APP BAR
+  // ============================================
+  Widget _buildAppBar() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade600, Colors.blue.shade800],
+        ),
+        boxShadow: [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.local_parking, color: Colors.white, size: 28),
+          SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Parking Dashboard',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Find & Reserve Parking',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.refresh, color: Colors.white),
+            ),
+            onPressed: () {
+              _fetchParkingStats();
+              if (_selectedTabIndex == 1) _loadUserBookings();
+            },
+            tooltip: 'Refresh',
+          ),
+          IconButton(
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.logout, color: Colors.white),
+            ),
+            onPressed: _logout,
+            tooltip: 'Logout',
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================
+  // TAB BAR
+  // ============================================
+  Widget _buildTabBar() {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _selectedTabIndex = 0),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: _selectedTabIndex == 0
+                          ? Colors.blue
+                          : Colors.transparent,
+                      width: 3,
+                    ),
+                  ),
+                ),
+                child: Center(
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.dashboard, color: Colors.white, size: 28),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Welcome to User Dashboard',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.refresh, color: Colors.white),
-                        ),
-                        onPressed: _isLoading ? null : _loadData,
-                        tooltip: 'Refresh Data',
+                      Icon(
+                        Icons.dashboard,
+                        color: _selectedTabIndex == 0
+                            ? Colors.blue
+                            : Colors.grey,
                       ),
                       SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: _logout,
-                        child: Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.logout, color: Colors.white),
+                      Text(
+                        'Dashboard',
+                        style: TextStyle(
+                          color: _selectedTabIndex == 0
+                              ? Colors.blue
+                              : Colors.grey,
+                          fontWeight: _selectedTabIndex == 0
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                     ],
@@ -238,47 +828,225 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
                 ),
               ),
             ),
-            // TabBar
-            Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
-              ),
-              child: TabBar(
-                controller: _tabController,
-                labelColor: Colors.blue.shade700,
-                unselectedLabelColor: Colors.grey.shade600,
-                indicatorColor: Colors.blue.shade700,
-                indicatorWeight: 3,
-                labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                tabs: [
-                  Tab(text: 'Parking Lots'),
-                  Tab(text: 'Recent Parking History'),
-                  Tab(text: 'Summary Charts'),
-                ],
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() => _selectedTabIndex = 1);
+                _loadUserBookings();
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: _selectedTabIndex == 1
+                          ? Colors.blue
+                          : Colors.transparent,
+                      width: 3,
+                    ),
+                  ),
+                ),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.book_online,
+                        color: _selectedTabIndex == 1
+                            ? Colors.blue
+                            : Colors.grey,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'My Bookings',
+                        style: TextStyle(
+                          color: _selectedTabIndex == 1
+                              ? Colors.blue
+                              : Colors.grey,
+                          fontWeight: _selectedTabIndex == 1
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      if (userBookings.isNotEmpty)
+                        Container(
+                          margin: EdgeInsets.only(left: 4),
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${userBookings.length}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ),
-            Expanded(
-              child: _isLoading
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(color: Colors.blue.shade600),
-                          SizedBox(height: 16),
-                          Text('Loading data...', style: TextStyle(color: Colors.grey.shade600)),
-                        ],
-                      ),
-                    )
-                  : TabBarView(
-                      controller: _tabController,
-                      children: [
-                        _buildLotsTab(),
-                        _buildHistoryTab(),
-                        _buildSummaryTab(),
-                      ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================
+  // DASHBOARD TAB
+  // ============================================
+  Widget _buildDashboardTab() {
+    return RefreshIndicator(
+      onRefresh: _fetchParkingStats,
+      child: ListView(
+        padding: EdgeInsets.all(16),
+        children: [
+          // Summary Card
+          _buildSummaryCard(),
+
+          SizedBox(height: 24),
+
+          // Section Header
+          Row(
+            children: [
+              Icon(Icons.location_on, color: Colors.blue),
+              SizedBox(width: 8),
+              Text(
+                'Available Parking Blocks',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 16),
+
+          // Block Cards
+          ...blockData.entries.map((entry) {
+            return _buildBlockCard(
+              entry.key,
+              entry.value['available'],
+              entry.value['occupied'],
+            );
+          }).toList(),
+        ],
+      ),
+    );
+  }
+
+  // ============================================
+  // BOOKINGS TAB
+  // ============================================
+  Widget _buildBookingsTab() {
+    return RefreshIndicator(
+      onRefresh: _loadUserBookings,
+      child: isLoadingBookings
+          ? Center(child: CircularProgressIndicator())
+          : userBookings.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.event_busy, size: 80, color: Colors.grey.shade300),
+                  SizedBox(height: 16),
+                  Text(
+                    'No Bookings Yet',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade600,
                     ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Reserve a parking spot to see it here',
+                    style: TextStyle(color: Colors.grey.shade500),
+                  ),
+                  SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => setState(() => _selectedTabIndex = 0),
+                    icon: Icon(Icons.add),
+                    label: Text('Book Parking'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: EdgeInsets.all(16),
+              itemCount: userBookings.length,
+              itemBuilder: (context, index) {
+                return _buildBookingCard(userBookings[index]);
+              },
+            ),
+    );
+  }
+
+  // ============================================
+  // SUMMARY CARD
+  // ============================================
+  Widget _buildSummaryCard() {
+    return Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade400, Colors.blue.shade600],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: EdgeInsets.all(24),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_parking, color: Colors.white, size: 32),
+                SizedBox(width: 12),
+                Text(
+                  'Parking Overview',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatColumn(
+                  'Total',
+                  totalSlots.toString(),
+                  Colors.white,
+                  Icons.grid_on,
+                ),
+                _buildStatColumn(
+                  'Available',
+                  availableSlots.toString(),
+                  Colors.greenAccent,
+                  Icons.check_circle,
+                ),
+                _buildStatColumn(
+                  'Occupied',
+                  occupiedSlots.toString(),
+                  Colors.orangeAccent,
+                  Icons.car_rental,
+                ),
+              ],
             ),
           ],
         ),
@@ -286,201 +1054,139 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     );
   }
 
-  Widget _buildLotsTab() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Styled Search Bar (unchanged)
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search Lots...',
-                prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  query = value;
-                });
-                _loadData();
-              },
-            ),
+  // ============================================
+  // STAT COLUMN WIDGET
+  // ============================================
+  Widget _buildStatColumn(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 28),
+        SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
-          SizedBox(height: 16),
-          Expanded(
-            child: ListView.builder(
-              itemCount: lots.length,
-              itemBuilder: (context, index) {
-                final lot = lots[index];
-                final lotNumber = lot.lotNumber ?? (index + 1).toString(); // Sequential 1,2,3...
-                final availability = lot.availability ?? '0/0';
-                final availSplit = availability.split('/');
-                final avail = int.tryParse(availSplit[0] ?? '0') ?? 0;
-                final total = int.tryParse(availSplit[1] ?? '0') ?? 0;
-                final isFull = avail == 0;
-                return Container(
-                  margin: EdgeInsets.only(bottom: 12),
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        gradient: LinearGradient(
-                          colors: isFull
-                              ? [Colors.red.shade50, Colors.red.shade100]
-                              : [Colors.green.shade50, Colors.green.shade100],
-                        ),
-                      ),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.all(16),
-                        leading: Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: isFull ? Colors.red.shade200 : Colors.green.shade200,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isFull ? Icons.warning : Icons.check_circle,
-                            color: isFull ? Colors.red.shade700 : Colors.green.shade700,
-                          ),
-                        ),
-                        title: Text(
-                          lot.primeLocationName ?? 'Unknown Lot',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Lot : $lotNumber'), // Sequential 1,2,3...
-                            Text('${lot.address ?? 'N/A'}, ${lot.pinCode ?? 'N/A'}'),
-                            SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(Icons.currency_rupee, size: 14, color: Colors.grey.shade600),
-                                Text('₹${lot.price}/hr', style: TextStyle(fontSize: 14)),
-                              ],
-                            ),
-                          ],
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              availability,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isFull ? Colors.red.shade700 : Colors.green.shade700,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            SizedBox(
-                              width: 60,
-                              height: 4,
-                              child: LinearProgressIndicator(
-                                value: avail / total,
-                                backgroundColor: Colors.grey.shade300,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  isFull ? Colors.red.shade400 : Colors.green.shade400,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        onTap: () {
-                          setState(() {
-                            selectedLotId = lot.id;
-                          });
-                          _showReserveDialog(context, lot);
-                        },
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+        Text(label, style: TextStyle(color: Colors.white70, fontSize: 14)),
+      ],
     );
   }
 
-  void _showReserveDialog(BuildContext context, ParkingLot lot) {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          padding: EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              colors: [Colors.white, Colors.grey.shade50],
-            ),
-          ),
+  // ============================================
+  // BLOCK CARD WIDGET
+  // ============================================
+  Widget _buildBlockCard(String blockId, int available, int occupied) {
+    bool hasSlots = available > 0;
+    double percentage = (available / 40) * 100;
+
+    Color cardColor = hasSlots ? Colors.green.shade50 : Colors.red.shade50;
+    Color iconColor = hasSlots ? Colors.green : Colors.red;
+    Color progressColor = percentage > 50
+        ? Colors.green
+        : percentage > 25
+        ? Colors.orange
+        : Colors.red;
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 16),
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: hasSlots ? Colors.green.shade200 : Colors.red.shade200,
+          width: 2,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(16),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.local_parking, size: 60, color: Colors.blue.shade600),
-              SizedBox(height: 16),
-              Text(
-                'Reserve Spot in ${lot.primeLocationName ?? 'Lot'}',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 16),
-              TextField(
-                controller: _vehicleController,
-                decoration: InputDecoration(
-                  labelText: 'Vehicle Number',
-                  prefixIcon: Icon(Icons.directions_car),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.attach_money, color: Colors.blue.shade600),
-                    SizedBox(width: 8),
-                    Text('Price: ₹${lot.price}/hour', style: TextStyle(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-              SizedBox(height: 24),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      _reserveSpot();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue.shade600,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: iconColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text('Reserve', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Icon(
+                      Icons.local_parking,
+                      color: iconColor,
+                      size: 32,
+                    ),
+                  ),
+                  SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          blockId,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Available: $available / 40 slots',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: available / 40,
+                            backgroundColor: Colors.grey.shade300,
+                            color: progressColor,
+                            minHeight: 10,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
+              ),
+              SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: hasSlots
+                      ? () => _showReserveDialog(blockId)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: hasSlots ? Colors.blue : Colors.grey,
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: hasSlots ? 4 : 0,
+                  ),
+                  icon: Icon(
+                    hasSlots ? Icons.add_circle : Icons.block,
+                    size: 24,
+                  ),
+                  label: Text(
+                    hasSlots ? 'Reserve Spot' : 'Fully Booked',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
             ],
           ),
@@ -489,268 +1195,137 @@ class _UserDashboardScreenState extends State<UserDashboardScreen>
     );
   }
 
-  Widget _buildHistoryTab() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.history, color: Colors.blue.shade600, size: 28),
-              SizedBox(width: 12),
-              Text(
-                'Recent Parking History',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          if (history.isEmpty)
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+  // ============================================
+  // BOOKING CARD WIDGET
+  // ============================================
+  Widget _buildBookingCard(Map<String, dynamic> booking) {
+    String status = booking['status'] ?? 'unknown';
+    String paymentStatus = booking['paymentStatus'] ?? 'pending';
+    String blockId = booking['blockId'] ?? 'N/A';
+    String vehicleNumber = booking['vehicleNumber'] ?? 'N/A';
+    String bookingTime = booking['bookingTime'] ?? 'N/A';
+    bool canRelease = status == 'paid'; // Only paid bookings can be released
+
+    Color statusColor = status == 'paid'
+        ? Colors.green
+        : status == 'payment_pending'
+        ? Colors.orange
+        : Colors.red;
+
+    IconData statusIcon = status == 'paid'
+        ? Icons.check_circle
+        : status == 'payment_pending'
+        ? Icons.pending
+        : Icons.cancel;
+
+    return Card(
+      margin: EdgeInsets.only(bottom: 16),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    Icon(Icons.event_busy, size: 80, color: Colors.grey.shade400),
-                    SizedBox(height: 16),
+                    Icon(Icons.local_parking, color: Colors.blue, size: 24),
+                    SizedBox(width: 8),
                     Text(
-                      'No parking history yet.',
-                      style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Make a reservation to get started!',
-                      style: TextStyle(color: Colors.grey.shade500),
+                      blockId,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            )
-          else
-            Expanded(
-              child: ListView.builder(
-                itemCount: history.length,
-                itemBuilder: (context, index) {
-                  final res = history[index];
-                  final isActive = res.leavingTimestamp == null;
-                  // Find spot for index
-                  final spot = spotsWithDetails.firstWhere(
-                    (s) => s['id'] == res.spotId,
-                    orElse: () => {'spotIndex': 1},
-                  );
-                  final spotIndex = spot['spotIndex'] ?? 1;
-                  // Find lot number (sequential)
-                  final lotId = res.lotId ?? '';
-                  final lotIndex = lots.indexWhere((lot) => lot.id == lotId);
-                  final lotNumber = lotIndex != -1 ? (lotIndex + 1).toString() : 'N/A';
-                  final spotCode = '$lotNumber-$spotIndex'; // e.g., "1-1"
-                  return Container(
-                    margin: EdgeInsets.only(bottom: 12),
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border(
-                            left: BorderSide(
-                              color: isActive ? Colors.blue.shade400 : Colors.green.shade400,
-                              width: 4,
-                            ),
-                          ),
-                        ),
-                        child: ListTile(
-                          contentPadding: EdgeInsets.all(16),
-                          leading: Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: isActive ? Colors.blue.shade100 : Colors.green.shade100,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              isActive ? Icons.access_time : Icons.check,
-                              color: isActive ? Colors.blue.shade600 : Colors.green.shade600,
-                            ),
-                          ),
-                          title: Text(
-                            'Vehicle: ${res.vehicleNumber ?? 'N/A'}',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Lot : $lotNumber'), // Sequential 1,2,3...
-                              Text('Spot Code: $spotCode'), // 1-1 format
-                              Text('Parked: ${res.formattedParkingTime}'),
-                            ],
-                          ),
-                          trailing: isActive
-                              ? ElevatedButton(
-                                  onPressed: () => _releaseSpot(res),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange.shade600,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                  ),
-                                  child: Text('Release', style: TextStyle(color: Colors.white)),
-                                )
-                              : Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade100,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    'Cost: ₹${res.parkingCost?.toStringAsFixed(2) ?? '0.00'}',
-                                    style: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(statusIcon, color: statusColor, size: 16),
+                      SizedBox(width: 4),
+                      Text(
+                        status.toUpperCase(),
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryTab() {
-    final occupied = (summary['occupiedSpots'] ?? 0).toDouble();
-    final available = (summary['availableSpots'] ?? 0).toDouble();
-    final total = occupied + available;
-
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.analytics, color: Colors.purple.shade600, size: 28),
-              SizedBox(width: 12),
-              Text(
-                'Parking Spots Overview',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.purple.shade800),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Expanded(
-            child: Card(
-              elevation: 8,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: Container(
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: LinearGradient(
-                    colors: [Colors.purple.shade50, Colors.white],
+                    ],
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Spots Status',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple.shade700),
+              ],
+            ),
+            Divider(height: 24),
+            _buildBookingDetailRow(
+              'Vehicle',
+              vehicleNumber,
+              Icons.directions_car,
+            ),
+            SizedBox(height: 8),
+            _buildBookingDetailRow(
+              'Booking Time',
+              bookingTime,
+              Icons.access_time,
+            ),
+            SizedBox(height: 8),
+            _buildBookingDetailRow('Payment', paymentStatus, Icons.payment),
+
+            // RELEASE BUTTON - Only show for paid bookings
+            if (canRelease) ...[
+              SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _releaseParking(booking),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    SizedBox(height: 24),
-                    SizedBox(
-                      height: 250,
-                      child: DoughnutChart(
-                        occupied: occupied,
-                        available: available,
-                      ),
-                    ),
-                    SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildStatCard('Occupied', occupied.toInt(), Colors.red.shade400, Icons.people),
-                        _buildStatCard('Available', available.toInt(), Colors.green.shade400, Icons.local_parking),
-                      ],
-                    ),
-                  ],
+                    elevation: 4,
+                  ),
+                  icon: Icon(Icons.exit_to_app, size: 20),
+                  label: Text(
+                    'Exit Parking',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-            ),
-          ),
-        ],
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildStatCard(String label, int value, Color color, IconData icon) {
-    return Container(
-      width: 120,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, size: 32, color: color),
-          SizedBox(height: 8),
-          Text(
-            '$value',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
+  Widget _buildBookingDetailRow(String label, String value, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey.shade600),
+        SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.grey.shade700,
           ),
-          Text(label, style: TextStyle(color: color, fontSize: 14)),
-        ],
-      ),
-    );
-  }
-}
-
-class DoughnutChart extends StatelessWidget {
-  final double occupied;
-  final double available;
-
-  const DoughnutChart({
-    Key? key,
-    required this.occupied,
-    required this.available,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return PieChart(
-      PieChartData(
-        sections: [
-          PieChartSectionData(
-            value: occupied,
-            color: Colors.red.shade400,
-            title: '${occupied.toInt()}',
-            titleStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            radius: 80,
-          ),
-          PieChartSectionData(
-            value: available,
-            color: Colors.green.shade400,
-            title: '${available.toInt()}',
-            titleStyle: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-            radius: 80,
-          ),
-        ],
-        centerSpaceRadius: 50,
-        sectionsSpace: 4,
-        borderData: FlBorderData(show: false),
-      ),
+        ),
+        Expanded(
+          child: Text(value, style: TextStyle(color: Colors.grey.shade600)),
+        ),
+      ],
     );
   }
 }

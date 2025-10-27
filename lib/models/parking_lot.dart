@@ -1,50 +1,47 @@
-// lib/models/parking_lot.dart (Updated to include lotNumber)
 class ParkingLot {
   String? id;
-  String? lotNumber; // New: Sequential number (1, 2, 3...)
-  String? code; // Formatted code
   String? primeLocationName;
   double? price;
   String? address;
   String? pinCode;
   int? maximumNumberOfSpots;
-  String? availability;
+  String? lotNumber; // Sequential number for display
+  String? code; // Display code like "LOT-ABC1"
 
   ParkingLot({
     this.id,
-    this.lotNumber,
-    this.code,
     this.primeLocationName,
     this.price,
     this.address,
     this.pinCode,
     this.maximumNumberOfSpots,
-    this.availability,
+    this.lotNumber,
+    this.code,
   });
 
   factory ParkingLot.fromJson(Map<String, dynamic> json) {
-    final lot = ParkingLot(
-      id: json['_id']?.toString(),
-      primeLocationName: json['primeLocationName'],
+    return ParkingLot(
+      id: json['_id']?.toString() ?? json['id']?.toString(),
+      primeLocationName: json['primeLocationName']?.toString(),
       price: (json['price'] as num?)?.toDouble(),
-      address: json['address'],
-      pinCode: json['pinCode'],
-      maximumNumberOfSpots: json['maximumNumberOfSpots'],
-      availability: json['availability'],
+      address: json['address']?.toString(),
+      pinCode: json['pinCode']?.toString(),
+      maximumNumberOfSpots: json['maximumNumberOfSpots'] as int?,
+      lotNumber: json['lotNumber']?.toString(),
+      code: json['code']?.toString(),
     );
-    // Compute code if not present
-    lot.code = json['code'] ?? 'LOT-${lot.id?.substring(0, 4).toUpperCase() ?? 'N/A'}';
-    lot.lotNumber = json['lotNumber']; // From backend if available, else computed in frontend
-    return lot;
   }
 
   Map<String, dynamic> toJson() {
     return {
+      '_id': id,
       'primeLocationName': primeLocationName,
       'price': price,
       'address': address,
       'pinCode': pinCode,
       'maximumNumberOfSpots': maximumNumberOfSpots,
+      'lotNumber': lotNumber,
+      'code': code,
     };
   }
 }

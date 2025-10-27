@@ -1,30 +1,77 @@
-// Add these fields to your existing Booking schema
+// ============================================
+// File: backend/models/booking.js
+// COMPLETE BOOKING SCHEMA
+// ============================================
+
 const mongoose = require('mongoose');
-const BookingSchema = new mongoose.Schema({
-  // ... your existing fields ...
-  
-  // ADD THESE NEW FIELDS:
+
+const bookingSchema = new mongoose.Schema({
+  bookingId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  userId: {
+    type: String,
+    required: true,
+  },
+  vehicleNumber: {
+    type: String,
+    required: true,
+  },
+  vehicleType: {
+    type: String,
+    enum: ['CAR', 'BIKE'],
+    default: 'CAR',
+  },
+  blockId: {
+    type: String,
+    required: true,
+  },
+  slotNumber: {
+    type: String,
+    required: true,
+  },
+  floor: {
+    type: String,
+    default: '2',
+  },
+  status: {
+    type: String,
+    enum: ['payment_pending', 'paid', 'parked', 'completed', 'cancelled'],
+    default: 'payment_pending',
+  },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'completed', 'failed'],
-    default: 'pending'
+    enum: ['pending', 'paid', 'failed'],
+    default: 'pending',
   },
-  paymentId: {
+  transactionId: {
     type: String,
-    default: null
   },
-  orderId: {
-    type: String,
-    default: null
+  bookingTime: {
+    type: Date,
+    default: Date.now,
   },
-  paymentAmount: {
+  entryTime: {
+    type: Date,
+  },
+  exitTime: {
+    type: Date,
+  },
+  parkingCost: {
     type: Number,
-    required: true
+    default: 0,
   },
-  qrCode: {
-    type: String, // Will store QR code image as base64
-    default: null
-  }
+}, {
+  timestamps: true, // Adds createdAt and updatedAt
 });
 
+// Index for faster queries
+bookingSchema.index({ userId: 1, status: 1 });
+bookingSchema.index({ vehicleNumber: 1, status: 1 });
+bookingSchema.index({ blockId: 1, status: 1 });
 
+const Booking = mongoose.model('Booking', bookingSchema);
+
+module.exports = Booking;

@@ -1,7 +1,7 @@
 // lib/screens/add_lot_screen.dart
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import '../models/parking_lot.dart';
+
 
 class AddLotScreen extends StatefulWidget {
   final VoidCallback? onAdded; // Made optional

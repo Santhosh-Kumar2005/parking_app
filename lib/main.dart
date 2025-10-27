@@ -1,4 +1,3 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'screens/login_screen.dart';
@@ -25,10 +24,8 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
           visualDensity: VisualDensity.adaptivePlatformDensity,
-          scaffoldBackgroundColor: Colors.grey[100],
-          fontFamily: 'Roboto',
         ),
-        debugShowCheckedModeBanner: false, // Remove debug banner
+        debugShowCheckedModeBanner: false,
         home: Consumer<AuthService>(
           builder: (context, auth, child) {
             if (auth.isLoggedIn) {

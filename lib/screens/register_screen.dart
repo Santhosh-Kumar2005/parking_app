@@ -45,7 +45,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.person_add, size: 80, color: Colors.purple.shade600),
+                        Icon(
+                          Icons.person_add,
+                          size: 80,
+                          color: Colors.purple.shade600,
+                        ),
                         SizedBox(height: 16),
                         Text(
                           'Register Account',
@@ -68,12 +72,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           controller: _usernameController,
                           decoration: InputDecoration(
                             labelText: 'Username',
-                            prefixIcon: Icon(Icons.person, color: Colors.purple.shade600),
+                            prefixIcon: Icon(
+                              Icons.person,
+                              color: Colors.purple.shade600,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
+                          validator: (value) =>
+                              value?.isEmpty ?? true ? 'Required' : null,
                         ),
                         SizedBox(height: 16),
                         TextFormField(
@@ -81,13 +89,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           obscureText: _obscurePassword, // Toggle visibility
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            prefixIcon: Icon(Icons.lock, color: Colors.purple.shade600),
+                            prefixIcon: Icon(
+                              Icons.lock,
+                              color: Colors.purple.shade600,
+                            ),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
                                 color: Colors.purple.shade600,
                               ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -95,7 +110,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           validator: (value) {
                             if (value?.isEmpty ?? true) return 'Required';
-                            if (value!.length < 8) return 'At least 8 characters';
+                            if (value!.length < 8)
+                              return 'At least 8 characters';
                             final regex = RegExp(
                               r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!]{7,15}$',
                             );
@@ -109,7 +125,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           value: _selectedRole,
                           decoration: InputDecoration(
                             labelText: 'Role',
-                            prefixIcon: Icon(Icons.security, color: Colors.purple.shade600),
+                            prefixIcon: Icon(
+                              Icons.security,
+                              color: Colors.purple.shade600,
+                            ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -122,7 +141,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               )
                               .toList(),
-                          onChanged: (value) => setState(() => _selectedRole = value!),
+                          onChanged: (value) =>
+                              setState(() => _selectedRole = value!),
                         ),
                         SizedBox(height: 24),
                         SizedBox(
@@ -172,10 +192,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       final success = await context.read<AuthService>().register(
-            _usernameController.text,
-            _passwordController.text,
-            _selectedRole,
-          );
+        _usernameController.text,
+        _passwordController.text,
+        _selectedRole,
+      );
       if (success) {
         final role = context.read<AuthService>().userRole;
         Navigator.pushReplacementNamed(context, '/$role');
