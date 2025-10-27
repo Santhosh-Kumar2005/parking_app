@@ -32,14 +32,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: Card(
                 elevation: 8,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -50,7 +50,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           size: 80,
                           color: Colors.purple.shade600,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
                           'Register Account',
                           style: TextStyle(
@@ -59,7 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             color: Colors.purple.shade800,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           'Create your account to get started',
                           style: TextStyle(
@@ -67,7 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             color: Colors.grey.shade600,
                           ),
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         TextFormField(
                           controller: _usernameController,
                           decoration: InputDecoration(
@@ -83,7 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           validator: (value) =>
                               value?.isEmpty ?? true ? 'Required' : null,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword, // Toggle visibility
@@ -110,19 +110,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           validator: (value) {
                             if (value?.isEmpty ?? true) return 'Required';
-                            if (value!.length < 8)
+                            if (value!.length < 8) {
                               return 'At least 8 characters';
+                            }
                             final regex = RegExp(
                               r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@#$%^&*!])[A-Za-z\d@#$%^&*!]{7,15}$',
                             );
-                            if (!regex.hasMatch(value))
+                            if (!regex.hasMatch(value)) {
                               return 'Must have uppercase, lowercase, digit, special char, 7-15 chars';
+                            }
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          value: _selectedRole,
+                          initialValue: _selectedRole,
                           decoration: InputDecoration(
                             labelText: 'Role',
                             prefixIcon: Icon(
@@ -144,19 +146,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           onChanged: (value) =>
                               setState(() => _selectedRole = value!),
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _register,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.purple.shade600,
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: Text(
+                            child: const Text(
                               'Register',
                               style: TextStyle(
                                 fontSize: 18,
@@ -166,11 +168,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextButton(
                           onPressed: () => Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (_) => LoginScreen()),
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
                           ),
                           child: Text(
                             'Already have an account? Login',
@@ -201,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pushReplacementNamed(context, '/$role');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Registration failed'),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,

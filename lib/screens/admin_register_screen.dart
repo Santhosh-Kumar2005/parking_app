@@ -5,6 +5,8 @@ import '../services/auth_service.dart';
 import 'login_screen.dart';
 
 class AdminRegisterScreen extends StatefulWidget {
+  const AdminRegisterScreen({super.key});
+
   @override
   _AdminRegisterScreenState createState() => _AdminRegisterScreenState();
 }
@@ -29,14 +31,14 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24.0),
               child: Card(
                 elevation: 8,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -47,7 +49,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                           size: 80,
                           color: Colors.purple.shade600,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         Text(
                           'Admin Registration',
                           style: TextStyle(
@@ -56,7 +58,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             color: Colors.purple.shade800,
                           ),
                         ),
-                        SizedBox(height: 8),
+                        const SizedBox(height: 8),
                         Text(
                           'Create your admin account',
                           style: TextStyle(
@@ -64,7 +66,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             color: Colors.grey.shade600,
                           ),
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         TextFormField(
                           controller: _usernameController,
                           decoration: InputDecoration(
@@ -76,7 +78,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                           ),
                           validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword, // Toggle visibility
@@ -102,29 +104,29 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 24),
+                        const SizedBox(height: 24),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
                             onPressed: _register,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.purple.shade600,
-                              padding: EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: Text(
+                            child: const Text(
                               'Register Admin',
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextButton(
                           onPressed: () => Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (_) => LoginScreen()),
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
                           ),
                           child: Text(
                             'Already have an account? Login',
@@ -154,7 +156,7 @@ class _AdminRegisterScreenState extends State<AdminRegisterScreen> {
         Navigator.pushReplacementNamed(context, '/admin');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Registration failed'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Registration failed'), backgroundColor: Colors.red),
         );
       }
     }

@@ -72,8 +72,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
       }).toList();
 
       final fetchedSpots = await ApiService.getSpotsWithDetails(token: token);
-      spotsWithDetails = fetchedSpots is List<Map<String, dynamic>>
-          ? fetchedSpots.map((spot) {
+      spotsWithDetails = fetchedSpots.map((spot) {
               // Find lot number
               final lotId = spot['lotId']?.toString() ?? '';
               final matchingLot = lots.firstWhere((lot) => lot.id == lotId, orElse: () => ParkingLot());
@@ -81,8 +80,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               final spotIndex = spot['spotIndex'] ?? 1; // From backend, fallback 1
               spot['spotCode'] = '$lotNum-$spotIndex'; // e.g., "1-1"
               return spot;
-            }).toList()
-          : [];
+            }).toList();
 
       final fetchedSummary = await ApiService.getSummary(token: token);
       summary = fetchedSummary ?? {};
@@ -106,7 +104,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
     ApiService.logout(); // Clear API token
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+      const SnackBar(
         content: Text('Logged out successfully!'),
         backgroundColor: Colors.green,
       ),
@@ -133,16 +131,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 gradient: LinearGradient(
                   colors: [Colors.blue.shade600, Colors.blue.shade800],
                 ),
-                boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
               ),
               child: SafeArea(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
-                      SizedBox(width: 12),
-                      Expanded(
+                      const Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
+                      const SizedBox(width: 12),
+                      const Expanded(
                         child: Text(
                           'Welcome to Admin Dashboard',
                           style: TextStyle(
@@ -154,26 +152,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       ),
                       IconButton(
                         icon: Container(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.refresh, color: Colors.white),
+                          child: const Icon(Icons.refresh, color: Colors.white),
                         ),
                         onPressed: _isLoading ? null : _loadData,
                         tooltip: 'Refresh Data',
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       GestureDetector(
                         onTap: _logout,
                         child: Container(
-                          padding: EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: Colors.red.withOpacity(0.2),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.logout, color: Colors.white),
+                          child: const Icon(Icons.logout, color: Colors.white),
                         ),
                       ),
                     ],
@@ -184,7 +182,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             // TabBar
             Container(
               height: 50,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2))],
               ),
@@ -194,8 +192,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 unselectedLabelColor: Colors.grey.shade600,
                 indicatorColor: Colors.blue.shade700,
                 indicatorWeight: 3,
-                labelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-                tabs: [
+                labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                tabs: const [
                   Tab(text: 'Parking Lots'),
                   Tab(text: 'Parking Spots'),
                   Tab(text: 'Revenue'),
@@ -222,17 +220,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   Widget _buildLotsTab() {
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           // Search bar (unchanged)
           Padding(
-            padding: EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.only(bottom: 16),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search by lot or location',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onChanged: (value) => _loadData(query: value),
@@ -242,7 +240,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                columns: [
+                columns: const [
                   DataColumn(label: Text('Lot ID')), // Sequential 1,2,3...
                   DataColumn(label: Text('Location Name')),
                   DataColumn(label: Text('Price/hr')),
@@ -264,7 +262,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     DataCell(Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.edit, color: Colors.blue),
+                          icon: const Icon(Icons.edit, color: Colors.blue),
                           onPressed: () async {
                             final result = await Navigator.push(
                               context,
@@ -274,7 +272,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           },
                         ),
                         IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _deleteLot(lot.id ?? ''),
                         ),
                       ],
@@ -291,16 +289,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   Widget _buildSpotsTab() {
     return Padding(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           // Search bar (unchanged)
           Padding(
-            padding: EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.only(bottom: 16),
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Search spots...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onChanged: (value) => _loadData(query: value),
@@ -310,7 +308,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                columns: [
+                columns: const [
                   DataColumn(label: Text('Spot Code')), // Now 1-1, 2-1, etc.
                   DataColumn(label: Text('Lot Name')),
                   DataColumn(label: Text('Status')),
@@ -334,7 +332,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                     DataCell(Text(parkingTime)),
                     DataCell(
                       IconButton(
-                        icon: Icon(Icons.details, color: Colors.blue),
+                        icon: const Icon(Icons.details, color: Colors.blue),
                         onPressed: () => Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -362,14 +360,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
     // Handle array format from backend
     final userList = userRevenuesRaw is List 
-      ? (userRevenuesRaw as List).cast<Map<String, dynamic>>() 
+      ? (userRevenuesRaw).cast<Map<String, dynamic>>() 
       : [];
     final lotList = lotRevenuesRaw is List 
-      ? (lotRevenuesRaw as List).cast<Map<String, dynamic>>() 
+      ? (lotRevenuesRaw).cast<Map<String, dynamic>>() 
       : [];
 
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -377,19 +375,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
             Row(
               children: [
                 Icon(Icons.analytics, color: Colors.green.shade600, size: 28),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Text(
                   'Revenue Statistics',
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green.shade800),
                 ),
               ],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Card(
               elevation: 8,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Padding(
-                padding: EdgeInsets.all(24),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -397,20 +395,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                       'Total Revenue: ₹${totalRevenue.toStringAsFixed(2)}',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green.shade600),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     // Users Revenue Table
                     Text(
                       'Registered Users Revenue',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     if (userList.isEmpty)
-                      Text('No user revenue data available.')
+                      const Text('No user revenue data available.')
                     else
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
-                          columns: [
+                          columns: const [
                             DataColumn(label: Text('User #', style: TextStyle(fontWeight: FontWeight.bold))), // Sequential number
                             DataColumn(label: Text('Username', style: TextStyle(fontWeight: FontWeight.bold))),
                             DataColumn(label: Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -428,20 +426,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                           }).toList(),
                         ),
                       ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     // Lots Revenue Table
                     Text(
                       'Lot Revenue',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade700),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     if (lotList.isEmpty)
-                      Text('No lot revenue data available.')
+                      const Text('No lot revenue data available.')
                     else
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
-                          columns: [
+                          columns: const [
                             DataColumn(label: Text('Lot #', style: TextStyle(fontWeight: FontWeight.bold))), // Sequential number
                             DataColumn(label: Text('Lot Name', style: TextStyle(fontWeight: FontWeight.bold))),
                             DataColumn(label: Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold))),

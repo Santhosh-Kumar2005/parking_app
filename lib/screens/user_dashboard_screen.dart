@@ -52,7 +52,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     _loadUserBookings();
 
     // Auto-refresh every 5 seconds
-    _refreshTimer = Timer.periodic(Duration(seconds: 5), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _fetchParkingStats();
       if (_selectedTabIndex == 1) {
         _loadUserBookings();
@@ -195,7 +195,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
+      builder: (context) => const Center(
         child: Card(
           child: Padding(
             padding: EdgeInsets.all(20),
@@ -264,8 +264,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.local_parking, color: Colors.blue),
-            SizedBox(width: 8),
+            const Icon(Icons.local_parking, color: Colors.blue),
+            const SizedBox(width: 8),
             Text('Reserve Spot in $blockId'),
           ],
         ),
@@ -274,7 +274,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: Colors.green.shade50,
                 borderRadius: BorderRadius.circular(8),
@@ -282,8 +282,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                  const SizedBox(width: 8),
                   Text(
                     'Available: ${blockData[blockId]!['available']} / 40 slots',
                     style: TextStyle(
@@ -294,7 +294,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 ],
               ),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             TextField(
               controller: _vehicleController,
               decoration: InputDecoration(
@@ -303,9 +303,9 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                prefixIcon: Icon(Icons.directions_car),
+                prefixIcon: const Icon(Icons.directions_car),
                 suffixIcon: IconButton(
-                  icon: Icon(Icons.clear),
+                  icon: const Icon(Icons.clear),
                   onPressed: () => _vehicleController.clear(),
                 ),
               ),
@@ -325,8 +325,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 }
               },
             ),
-            SizedBox(height: 8),
-            Row(
+            const SizedBox(height: 8),
+            const Row(
               children: [
                 Icon(Icons.info_outline, size: 16, color: Colors.grey),
                 SizedBox(width: 4),
@@ -341,7 +341,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
           ElevatedButton.icon(
             onPressed: () {
@@ -354,8 +354,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            icon: Icon(Icons.payment),
-            label: Text('Proceed to Payment'),
+            icon: const Icon(Icons.payment),
+            label: const Text('Proceed to Payment'),
           ),
         ],
       ),
@@ -370,7 +370,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       SnackBar(
         content: Text(message),
         backgroundColor: color,
-        duration: Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -384,7 +384,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         title: Row(
           children: [
             Icon(Icons.warning, color: color),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Flexible(child: Text(title)),
           ],
         ),
@@ -392,7 +392,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('OK'),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -416,7 +416,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.exit_to_app, color: Colors.orange),
             SizedBox(width: 8),
@@ -426,11 +426,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
+            const Text(
               'Select your vehicle type to calculate final charges',
               style: TextStyle(fontSize: 14),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Row(
               children: [
                 Expanded(
@@ -438,28 +438,34 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     onPressed: () => Navigator.pop(context, 'CAR'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    icon: Icon(Icons.directions_car),
-                    label: Text('CAR\n₹50/hr', textAlign: TextAlign.center),
+                    icon: const Icon(Icons.directions_car),
+                    label: const Text(
+                      'CAR\n₹50/hr',
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
-                SizedBox(width: 12),
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => Navigator.pop(context, 'BIKE'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
-                      padding: EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    icon: Icon(Icons.two_wheeler),
-                    label: Text('BIKE\n₹25/hr', textAlign: TextAlign.center),
+                    icon: const Icon(Icons.two_wheeler),
+                    label: const Text(
+                      'BIKE\n₹25/hr',
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ),
               ],
@@ -469,7 +475,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
           ),
         ],
       ),
@@ -481,7 +487,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(
+      builder: (context) => const Center(
         child: Card(
           child: Padding(
             padding: EdgeInsets.all(20),
@@ -523,7 +529,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              title: Row(
+              title: const Row(
                 children: [
                   Icon(Icons.check_circle, color: Colors.green),
                   SizedBox(width: 8),
@@ -535,7 +541,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -547,49 +553,55 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Vehicle:', style: TextStyle(fontSize: 14)),
+                            const Text(
+                              'Vehicle:',
+                              style: TextStyle(fontSize: 14),
+                            ),
                             Text(
                               booking['vehicleNumber'],
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
                           ],
                         ),
-                        Divider(height: 16),
+                        const Divider(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Duration:', style: TextStyle(fontSize: 14)),
+                            const Text(
+                              'Duration:',
+                              style: TextStyle(fontSize: 14),
+                            ),
                             Text(
                               '$duration hours',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
                           ],
                         ),
-                        Divider(height: 16),
+                        const Divider(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Type:', style: TextStyle(fontSize: 14)),
+                            const Text('Type:', style: TextStyle(fontSize: 14)),
                             Text(
                               vehicleType,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
                             ),
                           ],
                         ),
-                        Divider(height: 16),
+                        const Divider(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
+                            const Text(
                               'Total Cost:',
                               style: TextStyle(
                                 fontSize: 18,
@@ -609,11 +621,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
-                      Icon(Icons.info_outline, size: 16, color: Colors.blue),
-                      SizedBox(width: 4),
+                      const Icon(
+                        Icons.info_outline,
+                        size: 16,
+                        color: Colors.blue,
+                      ),
+                      const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           'Slot has been released successfully',
@@ -640,7 +656,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: Text('Done'),
+                  child: const Text('Done'),
                 ),
               ],
             ),
@@ -692,7 +708,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               // Content
               Expanded(
                 child: isLoading
-                    ? Center(child: CircularProgressIndicator())
+                    ? const Center(child: CircularProgressIndicator())
                     : _selectedTabIndex == 0
                     ? _buildDashboardTab()
                     : _buildBookingsTab(),
@@ -709,20 +725,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   // ============================================
   Widget _buildAppBar() {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.blue.shade600, Colors.blue.shade800],
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: Row(
         children: [
-          Icon(Icons.local_parking, color: Colors.white, size: 28),
-          SizedBox(width: 12),
-          Expanded(
+          const Icon(Icons.local_parking, color: Colors.white, size: 28),
+          const SizedBox(width: 12),
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -743,12 +759,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           IconButton(
             icon: Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.refresh, color: Colors.white),
+              child: const Icon(Icons.refresh, color: Colors.white),
             ),
             onPressed: () {
               _fetchParkingStats();
@@ -758,12 +774,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           IconButton(
             icon: Container(
-              padding: EdgeInsets.all(8),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: Colors.red.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.logout, color: Colors.white),
+              child: const Icon(Icons.logout, color: Colors.white),
             ),
             onPressed: _logout,
             tooltip: 'Logout',
@@ -779,7 +795,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   Widget _buildTabBar() {
     return Container(
       height: 56,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
@@ -811,7 +827,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                             ? Colors.blue
                             : Colors.grey,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         'Dashboard',
                         style: TextStyle(
@@ -856,7 +872,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                             ? Colors.blue
                             : Colors.grey,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         'My Bookings',
                         style: TextStyle(
@@ -870,15 +886,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       ),
                       if (userBookings.isNotEmpty)
                         Container(
-                          margin: EdgeInsets.only(left: 4),
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
+                          margin: const EdgeInsets.only(left: 4),
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
                             color: Colors.red,
                             shape: BoxShape.circle,
                           ),
                           child: Text(
                             '${userBookings.length}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
@@ -903,15 +919,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     return RefreshIndicator(
       onRefresh: _fetchParkingStats,
       child: ListView(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         children: [
           // Summary Card
           _buildSummaryCard(),
 
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
 
           // Section Header
-          Row(
+          const Row(
             children: [
               Icon(Icons.location_on, color: Colors.blue),
               SizedBox(width: 8),
@@ -922,7 +938,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             ],
           ),
 
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
 
           // Block Cards
           ...blockData.entries.map((entry) {
@@ -944,14 +960,14 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     return RefreshIndicator(
       onRefresh: _loadUserBookings,
       child: isLoadingBookings
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : userBookings.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.event_busy, size: 80, color: Colors.grey.shade300),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Text(
                     'No Bookings Yet',
                     style: TextStyle(
@@ -960,19 +976,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       color: Colors.grey.shade600,
                     ),
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Text(
                     'Reserve a parking spot to see it here',
                     style: TextStyle(color: Colors.grey.shade500),
                   ),
-                  SizedBox(height: 24),
+                  const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => setState(() => _selectedTabIndex = 0),
-                    icon: Icon(Icons.add),
-                    label: Text('Book Parking'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Book Parking'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
-                      padding: EdgeInsets.symmetric(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: 32,
                         vertical: 16,
                       ),
@@ -982,7 +998,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               ),
             )
           : ListView.builder(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
               itemCount: userBookings.length,
               itemBuilder: (context, index) {
                 return _buildBookingCard(userBookings[index]);
@@ -1007,10 +1023,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           borderRadius: BorderRadius.circular(16),
         ),
-        padding: EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Row(
+            const Row(
               children: [
                 Icon(Icons.local_parking, color: Colors.white, size: 32),
                 SizedBox(width: 12),
@@ -1024,7 +1040,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -1066,7 +1082,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     return Column(
       children: [
         Icon(icon, color: color, size: 28),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Text(
           value,
           style: TextStyle(
@@ -1075,7 +1091,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
             color: color,
           ),
         ),
-        Text(label, style: TextStyle(color: Colors.white70, fontSize: 14)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
       ],
     );
   }
@@ -1096,7 +1115,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         : Colors.red;
 
     return Card(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -1111,13 +1130,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Padding(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
           child: Column(
             children: [
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: iconColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -1128,19 +1147,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       size: 32,
                     ),
                   ),
-                  SizedBox(width: 16),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           blockId,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           'Available: $available / 40 slots',
                           style: TextStyle(
@@ -1148,7 +1167,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                             color: Colors.grey.shade700,
                           ),
                         ),
-                        SizedBox(height: 12),
+                        const SizedBox(height: 12),
                         ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: LinearProgressIndicator(
@@ -1163,7 +1182,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -1172,7 +1191,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                       : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: hasSlots ? Colors.blue : Colors.grey,
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -1184,7 +1203,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   ),
                   label: Text(
                     hasSlots ? 'Reserve Spot' : 'Fully Booked',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -1219,11 +1241,11 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         : Icons.cancel;
 
     return Card(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 16),
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1232,11 +1254,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.local_parking, color: Colors.blue, size: 24),
-                    SizedBox(width: 8),
+                    const Icon(
+                      Icons.local_parking,
+                      color: Colors.blue,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       blockId,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1244,7 +1270,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   ],
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
@@ -1252,7 +1281,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   child: Row(
                     children: [
                       Icon(statusIcon, color: statusColor, size: 16),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
                         status.toUpperCase(),
                         style: TextStyle(
@@ -1266,38 +1295,38 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                 ),
               ],
             ),
-            Divider(height: 24),
+            const Divider(height: 24),
             _buildBookingDetailRow(
               'Vehicle',
               vehicleNumber,
               Icons.directions_car,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildBookingDetailRow(
               'Booking Time',
               bookingTime,
               Icons.access_time,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             _buildBookingDetailRow('Payment', paymentStatus, Icons.payment),
 
             // RELEASE BUTTON - Only show for paid bookings
             if (canRelease) ...[
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: () => _releaseParking(booking),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
-                    padding: EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 4,
                   ),
-                  icon: Icon(Icons.exit_to_app, size: 20),
-                  label: Text(
+                  icon: const Icon(Icons.exit_to_app, size: 20),
+                  label: const Text(
                     'Exit Parking',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
@@ -1314,7 +1343,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     return Row(
       children: [
         Icon(icon, size: 20, color: Colors.grey.shade600),
-        SizedBox(width: 8),
+        const SizedBox(width: 8),
         Text(
           '$label: ',
           style: TextStyle(

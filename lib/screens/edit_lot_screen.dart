@@ -35,39 +35,39 @@ class _EditLotScreenState extends State<EditLotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Edit Parking Lot')),
+      appBar: AppBar(title: const Text('Edit Parking Lot')),
       body: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
           child: Column(
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: InputDecoration(labelText: 'Prime Location Name'),
+                decoration: const InputDecoration(labelText: 'Prime Location Name'),
               ),
               TextFormField(
                 controller: _priceController,
-                decoration: InputDecoration(labelText: 'Price per Hour'),
+                decoration: const InputDecoration(labelText: 'Price per Hour'),
                 keyboardType: TextInputType.number,
               ),
               TextFormField(
                 controller: _addressController,
-                decoration: InputDecoration(labelText: 'Address'),
+                decoration: const InputDecoration(labelText: 'Address'),
               ),
               TextFormField(
                 controller: _pinController,
-                decoration: InputDecoration(labelText: 'Pin Code'),
+                decoration: const InputDecoration(labelText: 'Pin Code'),
               ),
               TextFormField(
                 controller: _maxSpotsController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Maximum Number of Spots',
                 ),
                 keyboardType: TextInputType.number,
               ),
-              SizedBox(height: 16),
-              ElevatedButton(onPressed: _updateLot, child: Text('Save')),
+              const SizedBox(height: 16),
+              ElevatedButton(onPressed: _updateLot, child: const Text('Save')),
             ],
           ),
         ),

@@ -8,6 +8,9 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-key-change-this';
 
+// ========================================
+// MIDDLEWARE: Admin Authentication
+// ========================================
 const isAdmin = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -26,6 +29,9 @@ const isAdmin = async (req, res, next) => {
   }
 };
 
+// ========================================
+// SUMMARY ENDPOINT (Frontend calls: GET /summary)
+// ========================================
 router.get('/summary', async (req, res) => {
   try {
     // Fetch all completed reservations with populations
@@ -86,9 +92,9 @@ router.get('/summary', async (req, res) => {
     const occupiedSpots = totalSpots - availableSpots;
 
     res.json({
-      userRevenues: Object.values(userRevenues), // Array of {userId, username, revenue}
-      lotRevenues: Object.values(lotRevenues), // Array of {lotId, lotName, revenue}
-      totalRevenue: totalRevenue, // Matches frontend key
+      userRevenues: Object.values(userRevenues),
+      lotRevenues: Object.values(lotRevenues),
+      totalRevenue: totalRevenue,
       occupiedSpots,
       availableSpots,
     });
@@ -98,12 +104,42 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-router.post('/lots', isAdmin, async (req, res) => {
+// ========================================
+// PARKING LOT ENDPOINTS
+// ========================================
+
+// GET /parking-lots (with optional search query)
+router.get('/parking-lots', async (req, res) => {
+  try {
+    const { search } = req.query;
+    let query = {};
+    
+    if (search) {
+      query = {
+        $or: [
+          { primeLocationName: { $regex: search, $options: 'i' } },
+          { address: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+    
+    const lots = await ParkingLot.find(query);
+    res.json(lots);
+  } catch (err) {
+    console.error('GET /parking-lots error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// POST /parking-lots (create new lot)
+router.post('/parking-lots', isAdmin, async (req, res) => {
   try {
     const { primeLocationName, price, address, pinCode, maximumNumberOfSpots } = req.body;
+    
     if (!primeLocationName || !price || !address || !pinCode || !maximumNumberOfSpots) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
+    
     const lot = new ParkingLot(req.body);
     await lot.save();
 
@@ -121,43 +157,96 @@ router.post('/lots', isAdmin, async (req, res) => {
 
     res.status(201).json(lot);
   } catch (err) {
-    console.error('POST /lots error:', err);
+    console.error('POST /parking-lots error:', err);
     res.status(500).json({ message: err.message });
   }
 });
-router.put('/lots/:id', isAdmin, async (req, res) => {
+
+// PUT /parking-lots/:id (update lot)
+router.put('/parking-lots/:id', isAdmin, async (req, res) => {
   try {
     const lot = await ParkingLot.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!lot) return res.status(404).json({ message: 'Lot not found' });
     res.json(lot);
   } catch (err) {
-    console.error('PUT /lots/:id error:', err);
+    console.error('PUT /parking-lots/:id error:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
-router.delete('/lots/:id', isAdmin, async (req, res) => {
+// DELETE /parking-lots/:id (delete lot)
+router.delete('/parking-lots/:id', isAdmin, async (req, res) => {
   try {
     const lot = await ParkingLot.findByIdAndDelete(req.params.id);
     if (!lot) return res.status(404).json({ message: 'Lot not found' });
 
+    // Delete associated spots
     await ParkingSpot.deleteMany({ lotId: lot._id });
-    await Reservation.deleteMany({ spotId: { $in: await ParkingSpot.find({ lotId: lot._id }, '_id') } });
+    
+    // Delete associated reservations
+    const spots = await ParkingSpot.find({ lotId: lot._id }, '_id');
+    await Reservation.deleteMany({ spotId: { $in: spots.map(s => s._id) } });
 
     res.json({ message: 'Lot deleted' });
   } catch (err) {
-    console.error('DELETE /lots/:id error:', err);
+    console.error('DELETE /parking-lots/:id error:', err);
     res.status(500).json({ message: err.message });
   }
 });
 
+// ========================================
+// PARKING SPOT ENDPOINTS
+// ========================================
+
+// GET /parking-spots/details (get all spots with details)
+router.get('/parking-spots/details', async (req, res) => {
+  try {
+    const spots = await ParkingSpot.find()
+      .populate('lotId', 'primeLocationName address price')
+      .lean();
+    
+    res.json(spots);
+  } catch (err) {
+    console.error('GET /parking-spots/details error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET /parking-spots/:spotId (get specific spot details)
+router.get('/parking-spots/:spotId', async (req, res) => {
+  try {
+    const spot = await ParkingSpot.findById(req.params.spotId)
+      .populate('lotId');
+    
+    if (!spot) {
+      return res.status(404).json({ message: 'Spot not found' });
+    }
+    
+    res.json(spot);
+  } catch (err) {
+    console.error('GET /parking-spots/:spotId error:', err);
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ========================================
+// RESERVATION MANAGEMENT
+// ========================================
+
+// PUT /reservations/:id/release (release a parking spot)
 router.put('/reservations/:id/release', isAdmin, async (req, res) => {
   try {
     const { userId } = req.body;
     if (!userId) {
       return res.status(400).json({ message: 'userId is required' });
     }
-    const reservation = await Reservation.findOne({ _id: req.params.id, userId, leavingTimestamp: null });
+    
+    const reservation = await Reservation.findOne({ 
+      _id: req.params.id, 
+      userId, 
+      leavingTimestamp: null 
+    });
+    
     if (!reservation) {
       return res.status(404).json({ message: 'Reservation not found or already released' });
     }
@@ -173,6 +262,7 @@ router.put('/reservations/:id/release', isAdmin, async (req, res) => {
     if (isNaN(parkingTime.getTime()) || parkingTime > now) {
       return res.status(400).json({ message: 'Invalid parking timestamp' });
     }
+    
     let duration = (now - parkingTime) / (1000 * 60 * 60);
     duration = Math.max(duration, 1 / 60);
 

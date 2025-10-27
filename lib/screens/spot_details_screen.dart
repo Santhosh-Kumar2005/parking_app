@@ -72,15 +72,15 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
             children: [
               // Custom AppBar
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.white),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),
-                    SizedBox(width: 12),
-                    Text(
+                    const SizedBox(width: 12),
+                    const Text(
                       'Spot Details',
                       style: TextStyle(
                         color: Colors.white,
@@ -93,7 +93,7 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
               ),
               Expanded(
                 child: isLoading
-                    ? Center(
+                    ? const Center(
                         child: CircularProgressIndicator(color: Colors.white),
                       )
                     : spotData == null || spotData!.isEmpty
@@ -101,17 +101,17 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.error_outline,
                               size: 64,
                               color: Colors.white70,
                             ),
-                            SizedBox(height: 16),
-                            Text(
+                            const SizedBox(height: 16),
+                            const Text(
                               'No spot data available',
                               style: TextStyle(color: Colors.white70),
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _loadSpotDetails,
                               style: ElevatedButton.styleFrom(
@@ -126,14 +126,14 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
                         ),
                       )
                     : Padding(
-                        padding: EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(16),
                         child: Card(
                           elevation: 8,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Padding(
-                            padding: EdgeInsets.all(24),
+                            padding: const EdgeInsets.all(24),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -142,7 +142,7 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
                                   size: 48,
                                   color: Colors.teal.shade600,
                                 ),
-                                SizedBox(height: 16),
+                                const SizedBox(height: 16),
                                 Text(
                                   'Spot Information',
                                   style: TextStyle(
@@ -151,7 +151,7 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
                                     color: Colors.teal.shade800,
                                   ),
                                 ),
-                                SizedBox(height: 24),
+                                const SizedBox(height: 24),
                                 _buildDetailRow(
                                   'Spot ID',
                                   spotData!['id'] ?? 'N/A',
@@ -201,21 +201,21 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
                                   'Cost',
                                   '₹${spotData!['parkingCost'] ?? '0.00'}',
                                 ),
-                                SizedBox(height: 24),
+                                const SizedBox(height: 24),
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
                                     onPressed: () => Navigator.pop(context),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.teal.shade600,
-                                      padding: EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                         vertical: 16,
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    child: Text(
+                                    child: const Text(
                                       'Back',
                                       style: TextStyle(
                                         fontSize: 18,
@@ -240,7 +240,7 @@ class _SpotDetailsScreenState extends State<SpotDetailsScreen> {
 
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

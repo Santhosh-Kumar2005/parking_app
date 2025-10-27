@@ -12,7 +12,7 @@ class ApiService {
   // ============================================
   // UPDATED WITH YOUR IP ADDRESS
   // ============================================
-  static const String baseUrl = 'http://localhost:3000';
+  static const String baseUrl = 'https://parking-app-backend-8oei.onrender.com';
 
   static String? _authToken;
 
@@ -57,7 +57,7 @@ class ApiService {
       return null;
     } catch (e) {
       print('Login error: $e');
-      return null ;
+      return null;
     }
   }
 

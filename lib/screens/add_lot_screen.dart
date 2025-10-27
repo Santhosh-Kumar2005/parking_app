@@ -43,15 +43,15 @@ class _AddLotScreenState extends State<AddLotScreen> {
             children: [
               // Custom AppBar
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back, color: Colors.white),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => Navigator.pop(context),
                     ),
-                    SizedBox(width: 12),
-                    Text(
+                    const SizedBox(width: 12),
+                    const Text(
                       'Add Parking Lot',
                       style: TextStyle(
                         color: Colors.white,
@@ -64,20 +64,20 @@ class _AddLotScreenState extends State<AddLotScreen> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(24),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           children: [
                             Icon(Icons.add_location_alt, size: 64, color: Colors.blue.shade600),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             Text(
                               'New Parking Lot',
                               style: TextStyle(
@@ -86,7 +86,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
                                 color: Colors.blue.shade800,
                               ),
                             ),
-                            SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             TextFormField(
                               controller: _nameController,
                               decoration: InputDecoration(
@@ -98,7 +98,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
                               ),
                               validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _priceController,
                               decoration: InputDecoration(
@@ -108,7 +108,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
                                 ),
                                 prefixIcon: Icon(Icons.attach_money, color: Colors.green.shade600),
                               ),
-                              keyboardType: TextInputType.numberWithOptions(decimal: true),
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
                               validator: (v) {
                                 if (v?.isEmpty ?? true) return 'Required';
                                 final num = double.tryParse(v!);
@@ -116,7 +116,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
                                 return null;
                               },
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _addressController,
                               decoration: InputDecoration(
@@ -128,7 +128,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
                               ),
                               validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _pinController,
                               decoration: InputDecoration(
@@ -141,7 +141,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
                               keyboardType: TextInputType.number,
                               validator: (v) => v?.isEmpty ?? true ? 'Required' : null,
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _maxSpotsController,
                               decoration: InputDecoration(
@@ -159,25 +159,25 @@ class _AddLotScreenState extends State<AddLotScreen> {
                                 return null;
                               },
                             ),
-                            SizedBox(height: 32),
+                            const SizedBox(height: 32),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _addLot,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue.shade600,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
                                 child: _isLoading
-                                    ? SizedBox(
+                                    ? const SizedBox(
                                         height: 20,
                                         width: 20,
                                         child: CircularProgressIndicator(color: Colors.white),
                                       )
-                                    : Text(
+                                    : const Text(
                                         'Add Lot',
                                         style: TextStyle(
                                           fontSize: 18,
@@ -217,7 +217,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
         print('API Response: $lot'); // Log full response
         if (lot != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Lot added successfully!'),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
@@ -233,7 +233,7 @@ class _AddLotScreenState extends State<AddLotScreen> {
           _maxSpotsController.clear();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Failed to add lot. Check backend.'),
               backgroundColor: Colors.red,
               behavior: SnackBarBehavior.floating,

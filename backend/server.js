@@ -8,12 +8,17 @@ const app = express();
 // ========================================
 // MIDDLEWARE
 // ========================================
-app.use(cors());
+app.use(cors({
+  origin: '*', // Allow Firebase and all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
-// Request logging (simplified)
+// Request logging
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
@@ -33,55 +38,79 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 // ========================================
-// ROUTES - ORDER MATTERS!
+// IMPORT ROUTES
 // ========================================
-
-// Import routes
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const bookingRoutes = require('./routes/bookings');
 
-// Register routes - ORDER MATTERS!
-app.use('/auth', authRoutes);                    
-app.use('/api/admin', adminRoutes);              
-app.use('/api/bookings', bookingRoutes);         
-app.use('/bookings', bookingRoutes);             // Support both /bookings and /api/bookings
-app.use('/api', userRoutes);                     
-
-// Root endpoint
+// ========================================
+// ROOT TEST ROUTE
+// ========================================
 app.get('/', (req, res) => {
-  res.json({
-    message: '🚀 Smart Parking API Running',
-    version: '2.1.0',
-    status: 'OK',
+  res.json({ 
+    message: '🚗 Parking App API Running',
+    status: 'active',
+    timestamp: new Date().toISOString(),
     endpoints: {
-      auth: {
-        login: 'POST /auth/login',
-        register: 'POST /auth/register'
-      },
-      bookings: {
-        list: 'GET /api/bookings OR /bookings',
-        stats: 'GET /api/bookings/parking-stats OR /bookings/parking-stats',
-        create: 'POST /api/bookings OR /bookings',
-        userBookings: 'GET /api/bookings/user/:userId OR /bookings/user/:userId'
-      },
-      parking: {
-        lots: 'GET /api/lots',
-        spots: 'GET /api/spots/details'
-      }
+      auth: '/auth/login, /auth/register',
+      parkingLots: '/parking-lots',
+      parkingSpots: '/parking-spots',
+      bookings: '/bookings',
+      summary: '/summary'
     }
   });
 });
 
 // ========================================
-// 404 HANDLER - MUST BE LAST!
+// REGISTER ROUTES - EXACT MATCH TO FRONTEND
+// ========================================
+
+// Auth routes (✅ Frontend calls: /auth/login, /auth/register)
+app.use('/auth', authRoutes);
+
+// Parking Lots routes (✅ Frontend calls: /parking-lots)
+app.get('/parking-lots', adminRoutes);
+app.post('/parking-lots', adminRoutes);
+app.put('/parking-lots/:id', adminRoutes);
+app.delete('/parking-lots/:id', adminRoutes);
+
+// Parking Spots routes (✅ Frontend calls: /parking-spots/details, /parking-spots/:id)
+app.get('/parking-spots/details', adminRoutes);
+app.get('/parking-spots/:spotId', adminRoutes);
+
+// Summary route (✅ Frontend calls: /summary)
+app.get('/summary', adminRoutes);
+
+// Booking routes (✅ Frontend calls: /bookings/*)
+app.use('/bookings', bookingRoutes);
+
+// User routes (if needed)
+app.use('/users', userRoutes);
+
+// ========================================
+// 404 HANDLER
 // ========================================
 app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Cannot ${req.method} ${req.path}`,
-    hint: 'Check GET / for available endpoints'
+  console.log(`❌ 404 Not Found: ${req.method} ${req.path}`);
+  res.status(404).json({ 
+    error: 'Route not found',
+    path: req.path,
+    method: req.method,
+    availableRoutes: ['/auth', '/parking-lots', '/parking-spots', '/bookings', '/summary']
+  });
+});
+
+// ========================================
+// ERROR HANDLER
+// ========================================
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err.message);
+  console.error(err.stack);
+  res.status(500).json({ 
+    error: 'Internal server error',
+    message: err.message 
   });
 });
 
@@ -89,16 +118,8 @@ app.use((req, res) => {
 // START SERVER
 // ========================================
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log('========================================');
-  console.log('🚀 Smart Parking Server Started!');
-  console.log('========================================');
-  console.log(`📡 Server: http://localhost:${PORT}`);
-  console.log(`🔐 Auth: http://localhost:${PORT}/auth/login`);
-  console.log(`📊 Stats: http://localhost:${PORT}/bookings/parking-stats`);
-  console.log(`🅿️  Lots: http://localhost:${PORT}/api/lots`);
-  console.log('========================================');
-  console.log('✅ Both /bookings and /api/bookings work!');
-  console.log('========================================');
-  console.log('Press Ctrl+C to stop\n');
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 CORS enabled for all origins`);
 });

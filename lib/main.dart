@@ -12,6 +12,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -30,19 +32,19 @@ class MyApp extends StatelessWidget {
           builder: (context, auth, child) {
             if (auth.isLoggedIn) {
               if (auth.userRole == 'admin') {
-                return AdminDashboardScreen();
+                return const AdminDashboardScreen();
               } else {
-                return UserDashboardScreen();
+                return const UserDashboardScreen();
               }
             }
-            return LoginScreen();
+            return const LoginScreen();
           },
         ),
         routes: {
-          '/login': (context) => LoginScreen(),
-          '/register': (context) => RegisterScreen(),
-          '/admin': (context) => AdminDashboardScreen(),
-          '/user': (context) => UserDashboardScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/register': (context) => const RegisterScreen(),
+          '/admin': (context) => const AdminDashboardScreen(),
+          '/user': (context) => const UserDashboardScreen(),
         },
       ),
     );

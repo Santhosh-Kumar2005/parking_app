@@ -33,13 +33,13 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.local_parking, size: 80, color: Colors.white),
-                  SizedBox(height: 16),
-                  Text(
+                  const Icon(Icons.local_parking, size: 80, color: Colors.white),
+                  const SizedBox(height: 16),
+                  const Text(
                     'Parking Management',
                     style: TextStyle(
                       fontSize: 28,
@@ -47,19 +47,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     'Welcome back! Please sign in to your account.',
                     style: TextStyle(fontSize: 16, color: Colors.white70),
                   ),
-                  SizedBox(height: 40),
+                  const SizedBox(height: 40),
                   Card(
                     elevation: 8,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Padding(
-                      padding: EdgeInsets.all(24.0),
+                      padding: const EdgeInsets.all(24.0),
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -77,12 +77,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                     child: Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
                                       child: Text('User', style: TextStyle(color: _isAdminLogin ? Colors.grey.shade600 : Colors.white)),
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: 12),
+                                const SizedBox(width: 12),
                                 Expanded(
                                   child: ElevatedButton(
                                     onPressed: () => setState(() => _isAdminLogin = true),
@@ -93,20 +93,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                     child: Padding(
-                                      padding: EdgeInsets.symmetric(vertical: 12),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
                                       child: Text('Admin', style: TextStyle(color: _isAdminLogin ? Colors.white : Colors.grey.shade600)),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             TextFormField(
                               controller: _usernameController,
                               decoration: InputDecoration(
                                 labelText: 'Username',
-                                prefixIcon: Icon(Icons.person, color: Colors.black87),
-                                labelStyle: TextStyle(color: Colors.black87), // Explicit label color
+                                prefixIcon: const Icon(Icons.person, color: Colors.black87),
+                                labelStyle: const TextStyle(color: Colors.black87), // Explicit label color
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(color: Colors.blue.shade600),
@@ -118,13 +118,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextFormField(
                               controller: _passwordController,
                               obscureText: _obscurePassword,
                               decoration: InputDecoration(
                                 labelText: 'Password',
-                                prefixIcon: Icon(Icons.lock, color: Colors.black87),
+                                prefixIcon: const Icon(Icons.lock, color: Colors.black87),
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword ? Icons.visibility : Icons.visibility_off,
@@ -132,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                 ),
-                                labelStyle: TextStyle(color: Colors.black87), // Explicit label color
+                                labelStyle: const TextStyle(color: Colors.black87), // Explicit label color
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(color: Colors.blue.shade600),
@@ -144,19 +144,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               validator: (value) => value?.isEmpty ?? true ? 'Required' : null,
                             ),
-                            SizedBox(height: 24),
+                            const SizedBox(height: 24),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(
                                 onPressed: _login,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue.shade600,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   'Sign In',
                                   style: TextStyle(
                                     fontSize: 18,
@@ -166,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             TextButton(
                               onPressed: () => Navigator.push(
                                 context,
@@ -205,12 +205,12 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacementNamed(context, route);
       } else if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Role mismatch. Please select correct login type.')),
+          const SnackBar(content: Text('Role mismatch. Please select correct login type.')),
         );
         context.read<AuthService>().logout();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Invalid credentials'), backgroundColor: Colors.red),
+          const SnackBar(content: Text('Invalid credentials'), backgroundColor: Colors.red),
         );
       }
     }
