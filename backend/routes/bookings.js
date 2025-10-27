@@ -1,12 +1,11 @@
 // ============================================
 // File: backend/routes/bookings.js
-// COMPLETE WITH PAYMENT UPDATE & RELEASE
+// FIXED - Removed unused Reservation import
 // ============================================
 
 const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking');
-const Reservation = require('../models/Reservation');
 const ParkingLot = require('../models/ParkingLot');
 
 // ============================================
@@ -175,7 +174,7 @@ router.post('/', async (req, res) => {
 });
 
 // ============================================
-// UPDATE PAYMENT STATUS (NEW)
+// UPDATE PAYMENT STATUS
 // ============================================
 router.put('/:id/payment', async (req, res) => {
   try {
@@ -219,7 +218,7 @@ router.put('/:id/payment', async (req, res) => {
 });
 
 // ============================================
-// RELEASE/EXIT PARKING (NEW)
+// RELEASE/EXIT PARKING
 // ============================================
 router.post('/:id/release', async (req, res) => {
   try {
