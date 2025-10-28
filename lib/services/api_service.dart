@@ -1,13 +1,12 @@
 // ============================================
 // File: lib/services/api_service.dart
-// COMPLETE - ALL METHODS INCLUDING LIFTS
+// COMPLETE API SERVICE WITH LIFT METHODS
 // ============================================
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/parking_lot.dart';
 import '../models/user.dart';
-import '../models/lift.dart';
 
 class ApiService {
   static const String baseUrl = 'https://parking-app-backend-8oei.onrender.com';
@@ -92,7 +91,7 @@ class ApiService {
   }
 
   // ============================================
-  // PARKING LOT ENDPOINTS (Admin)
+  // PARKING LOT ENDPOINTS
   // ============================================
   static Future<List<ParkingLot>> getParkingLots({
     String? query,
@@ -173,7 +172,7 @@ class ApiService {
   }
 
   // ============================================
-  // PARKING SPOTS ENDPOINTS (Admin)
+  // PARKING SPOTS ENDPOINTS
   // ============================================
   static Future<List<Map<String, dynamic>>> getSpotsWithDetails({
     String? token,
@@ -234,6 +233,7 @@ class ApiService {
   // ============================================
   // USER BOOKING ENDPOINTS
   // ============================================
+
   static Future<Map<String, dynamic>> getParkingStats() async {
     try {
       final response = await http.get(
@@ -372,9 +372,34 @@ class ApiService {
   }
 
   // ============================================
-  // LIFT ENDPOINTS
+  // LIFT ENDPOINTS (NEW)
   // ============================================
-  static Future<List<Lift>> getLiftsByBlock(String blockId) async {
+
+  // Get all lifts
+  static Future<List<dynamic>> getAllLifts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/lifts'),
+        headers: _getHeaders(),
+      );
+
+      print('Get all lifts response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['lifts'] != null) {
+          return List<dynamic>.from(data['lifts']);
+        }
+      }
+      return [];
+    } catch (e) {
+      print('Get all lifts error: $e');
+      return [];
+    }
+  }
+
+  // Get lifts by block
+  static Future<List<dynamic>> getLiftsByBlock(String blockId) async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/lifts/block/$blockId'),
@@ -386,18 +411,17 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['lifts'] != null) {
-          return (data['lifts'] as List)
-              .map((lift) => Lift.fromJson(lift))
-              .toList();
+          return List<dynamic>.from(data['lifts']);
         }
       }
       return [];
     } catch (e) {
-      print('Error getting lifts: $e');
+      print('Get lifts by block error: $e');
       return [];
     }
   }
 
+  // Assign lift automatically
   static Future<Map<String, dynamic>?> assignLift({
     required String bookingId,
     required String blockId,
@@ -417,82 +441,54 @@ class ApiService {
       print('Assign lift response: ${response.statusCode} - ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data['lift'] != null) {
-          data['lift'] = Lift.fromJson(data['lift']);
-        }
-
-        return data;
+        return jsonDecode(response.body);
       }
       return null;
     } catch (e) {
-      print('Error assigning lift: $e');
+      print('Assign lift error: $e');
       return null;
     }
   }
 
+  // Release lift
   static Future<bool> releaseLift({
     required String liftId,
     String? bookingId,
   }) async {
     try {
+      final body = <String, dynamic>{'liftId': liftId};
+      if (bookingId != null) body['bookingId'] = bookingId;
+
       final response = await http.post(
         Uri.parse('$baseUrl/lifts/release'),
         headers: _getHeaders(),
-        body: jsonEncode({'liftId': liftId, 'bookingId': bookingId}),
+        body: jsonEncode(body),
       );
 
       print('Release lift response: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
-      print('Error releasing lift: $e');
+      print('Release lift error: $e');
       return false;
     }
   }
 
-  static Future<List<Lift>> getAllLifts() async {
+  // Initialize lifts (one-time setup)
+  static Future<Map<String, dynamic>?> initializeLifts() async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/lifts'),
+      final response = await http.post(
+        Uri.parse('$baseUrl/lifts/initialize'),
         headers: _getHeaders(),
       );
 
-      print('Get all lifts response: ${response.statusCode}');
+      print('Initialize lifts response: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['lifts'] != null) {
-          return (data['lifts'] as List)
-              .map((lift) => Lift.fromJson(lift))
-              .toList();
-        }
-      }
-      return [];
-    } catch (e) {
-      print('Error getting all lifts: $e');
-      return [];
-    }
-  }
-
-  static Future<Lift?> getLiftById(String liftId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/lifts/$liftId'),
-        headers: _getHeaders(),
-      );
-
-      print('Get lift by ID response: ${response.statusCode}');
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['success'] == true && data['lift'] != null) {
-          return Lift.fromJson(data['lift']);
-        }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return jsonDecode(response.body);
       }
       return null;
     } catch (e) {
-      print('Error getting lift: $e');
+      print('Initialize lifts error: $e');
       return null;
     }
   }

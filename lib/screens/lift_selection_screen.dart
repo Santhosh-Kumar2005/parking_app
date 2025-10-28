@@ -1,6 +1,6 @@
 // ============================================
 // File: lib/screens/lift_selection_screen.dart
-// LIFT SELECTION AFTER PAYMENT
+// LIFT SELECTION AFTER PAYMENT - FIXED
 // ============================================
 
 import 'package:flutter/material.dart';
@@ -48,7 +48,6 @@ class _LiftSelectionScreenState extends State<LiftSelectionScreen> {
   }
 
   void _startAutoRefresh() {
-    // Refresh every 5 seconds to check lift availability
     _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (waitMode && mounted) {
         _autoAssignLift();
@@ -67,7 +66,8 @@ class _LiftSelectionScreenState extends State<LiftSelectionScreen> {
       if (result != null && mounted) {
         setState(() {
           if (result['assigned'] == true && result['lift'] != null) {
-            assignedLift = result['lift'];
+            // Convert Map to Lift object
+            assignedLift = Lift.fromJson(result['lift']);
             waitMode = false;
             message = result['message'] ?? 'Lift assigned successfully';
           } else if (result['waitStatus'] == true) {
@@ -91,40 +91,14 @@ class _LiftSelectionScreenState extends State<LiftSelectionScreen> {
 
   Future<void> _refreshLifts() async {
     try {
-      final blockLifts = await ApiService.getLiftsByBlock(widget.blockId);
+      final blockLiftsData = await ApiService.getLiftsByBlock(widget.blockId);
       if (mounted) {
         setState(() {
-          lifts = blockLifts;
+          lifts = blockLiftsData.map((json) => Lift.fromJson(json)).toList();
         });
       }
     } catch (e) {
       print('Refresh lifts error: $e');
-    }
-  }
-
-  Color _getLiftStatusColor(String status) {
-    switch (status) {
-      case 'available':
-        return Colors.green;
-      case 'occupied':
-        return Colors.red;
-      case 'in_transit':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  IconData _getLiftStatusIcon(String status) {
-    switch (status) {
-      case 'available':
-        return Icons.check_circle;
-      case 'occupied':
-        return Icons.cancel;
-      case 'in_transit':
-        return Icons.sync;
-      default:
-        return Icons.help;
     }
   }
 
@@ -279,7 +253,9 @@ class _LiftSelectionScreenState extends State<LiftSelectionScreen> {
                         _buildInfoRow('Vehicle', widget.vehicleNumber),
                         _buildInfoRow(
                           'Booking ID',
-                          widget.bookingId.substring(0, 10) + '...',
+                          widget.bookingId.length > 10
+                              ? widget.bookingId.substring(0, 10) + '...'
+                              : widget.bookingId,
                         ),
                       ],
                     ),
