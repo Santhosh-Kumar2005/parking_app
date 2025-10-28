@@ -1,14 +1,9 @@
-// ============================================
-// File: lib/models/lift.dart
-// LIFT MODEL FOR FLUTTER
-// ============================================
-
 class Lift {
   final String id;
   final String liftId;
   final String blockId;
   final int liftNumber;
-  final String status; // available, occupied, in_transit, maintenance
+  final String status;
   final String? currentBookingId;
   final String? currentVehicleNumber;
   final DateTime? assignedAt;
@@ -33,26 +28,36 @@ class Lift {
   });
 
   factory Lift.fromJson(Map<String, dynamic> json) {
-    return Lift(
-      id: json['_id'] ?? '',
-      liftId: json['liftId'] ?? '',
-      blockId: json['blockId'] ?? '',
-      liftNumber: json['liftNumber'] ?? 0,
-      status: json['status'] ?? 'available',
-      currentBookingId: json['currentBookingId'],
-      currentVehicleNumber: json['currentVehicleNumber'],
-      assignedAt: json['assignedAt'] != null
-          ? DateTime.parse(json['assignedAt'])
-          : null,
-      releasedAt: json['releasedAt'] != null
-          ? DateTime.parse(json['releasedAt'])
-          : null,
-      sensorStatus: json['sensorStatus'] ?? false,
-      floor: json['floor'] ?? 'Ground',
-      lastActivity: json['lastActivity'] != null
-          ? DateTime.parse(json['lastActivity'])
-          : DateTime.now(),
-    );
+    print('🔍 Parsing Lift from JSON: $json');
+
+    try {
+      return Lift(
+        id: json['_id']?.toString() ?? '',
+        liftId: json['liftId']?.toString() ?? '',
+        blockId: json['blockId']?.toString() ?? '',
+        liftNumber: json['liftNumber'] is int
+            ? json['liftNumber']
+            : int.tryParse(json['liftNumber']?.toString() ?? '0') ?? 0,
+        status: json['status']?.toString() ?? 'available',
+        currentBookingId: json['currentBookingId']?.toString(),
+        currentVehicleNumber: json['currentVehicleNumber']?.toString(),
+        assignedAt: json['assignedAt'] != null
+            ? DateTime.tryParse(json['assignedAt'].toString())
+            : null,
+        releasedAt: json['releasedAt'] != null
+            ? DateTime.tryParse(json['releasedAt'].toString())
+            : null,
+        sensorStatus: json['sensorStatus'] == true,
+        floor: json['floor']?.toString() ?? 'Ground',
+        lastActivity: json['lastActivity'] != null
+            ? DateTime.tryParse(json['lastActivity'].toString()) ??
+                  DateTime.now()
+            : DateTime.now(),
+      );
+    } catch (e) {
+      print('❌ Error parsing Lift: $e');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
