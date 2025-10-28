@@ -1,11 +1,12 @@
 // ============================================
 // File: lib/screens/payment_screen.dart
-// COMPLETE PAYMENT SCREEN WITH QR CODE
+// FIXED: Now navigates to Lift Selection after payment
 // ============================================
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_service.dart';
+import 'lift_selection_screen.dart'; // ADD THIS IMPORT
 import 'dart:async';
 
 class PaymentScreen extends StatefulWidget {
@@ -25,8 +26,9 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   bool isProcessing = false;
   bool paymentSuccess = false;
-  String selectedVehicleType = 'CAR'; // CAR or BIKE
-  int parkingCharges = 50; // Default for CAR
+  String selectedVehicleType = 'CAR';
+  int parkingCharges = 50;
+  String? transactionId; // Store transaction ID
 
   @override
   void initState() {
@@ -43,15 +45,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Future<void> _processPayment() async {
     setState(() => isProcessing = true);
 
-    // Simulate payment processing delay
     await Future.delayed(const Duration(seconds: 2));
 
     try {
-      // Update booking with payment info
+      // Generate transaction ID
+      transactionId = 'TXN${DateTime.now().millisecondsSinceEpoch}';
+
       final response = await ApiService.updatePaymentStatus(
         bookingId: widget.bookingId,
         paymentStatus: 'paid',
-        transactionId: 'TXN${DateTime.now().millisecondsSinceEpoch}',
+        transactionId: transactionId!,
       );
 
       if (response['success'] == true) {
@@ -60,7 +63,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
           isProcessing = false;
         });
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Payment Successful! ✅'),
@@ -93,36 +95,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // ============================================
-  // PAYMENT SCREEN (Before Payment)
-  // ============================================
   Widget _buildPaymentScreen() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Booking Summary Card
           _buildBookingSummaryCard(),
-
           const SizedBox(height: 16),
-
-          // Vehicle Type Selection
           _buildVehicleTypeSelector(),
-
           const SizedBox(height: 16),
-
-          // Pricing Info Card
           _buildPricingInfoCard(),
-
           const SizedBox(height: 24),
-
-          // Payment Button
           _buildPaymentButton(),
-
           const SizedBox(height: 16),
-
-          // Cancel Button
           _buildCancelButton(),
         ],
       ),
@@ -130,14 +116,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   // ============================================
-  // SUCCESS SCREEN (After Payment)
+  // SUCCESS SCREEN - NOW WITH "SELECT LIFT" BUTTON
   // ============================================
   Widget _buildSuccessScreen() {
     final vehicleNumber = widget.bookingData['vehicleNumber'] ?? 'N/A';
     final blockId = widget.bookingData['blockId'] ?? 'N/A';
     final slotNumber = widget.bookingData['slotNumber'] ?? 'AUTO';
 
-    // QR Data: Contains all booking info
     final qrData =
         '''
 Parking Booking
@@ -146,6 +131,7 @@ Block: $blockId
 Slot: $slotNumber
 Type: $selectedVehicleType
 Booking ID: ${widget.bookingId}
+Transaction: $transactionId
 Time: ${DateTime.now().toString()}
 ''';
 
@@ -169,7 +155,6 @@ Time: ${DateTime.now().toString()}
 
           const SizedBox(height: 24),
 
-          // Success Text
           Text(
             'Payment Successful!',
             style: TextStyle(
@@ -208,7 +193,7 @@ Time: ${DateTime.now().toString()}
               child: Column(
                 children: [
                   const Text(
-                    'Show this at the gate',
+                    'Your Parking Pass',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
@@ -258,35 +243,36 @@ Time: ${DateTime.now().toString()}
 
           const SizedBox(height: 24),
 
-          // Instructions Card
+          // ⭐ NEW: Next Step Card
           Card(
             elevation: 4,
+            color: Colors.orange.shade50,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue),
-                      SizedBox(width: 8),
+                      Icon(Icons.arrow_forward, color: Colors.orange.shade700),
+                      const SizedBox(width: 8),
                       Text(
-                        'Instructions',
+                        'Next: Select Your Lift',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade700,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  _buildInstructionItem('1', 'Show QR code at entry gate'),
-                  _buildInstructionItem('2', 'Gate will open automatically'),
-                  _buildInstructionItem('3', 'Park in your assigned slot'),
-                  _buildInstructionItem('4', 'Show QR when exiting'),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Choose which lift to use for reaching your parking slot',
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+                  ),
                 ],
               ),
             ),
@@ -294,25 +280,60 @@ Time: ${DateTime.now().toString()}
 
           const SizedBox(height: 24),
 
-          // Done Button
+          // ⭐ CHANGED: "Select Lift" Button (Primary Action)
           SizedBox(
             width: double.infinity,
             height: 56,
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                // Navigate to Lift Selection Screen
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LiftSelectionScreen(
+                      bookingId: widget.bookingId,
+                      blockId: blockId,
+                      vehicleNumber: vehicleNumber,
+                      qrCodeData: qrData,
+                    ),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: Colors.orange,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
                 elevation: 4,
               ),
-              icon: const Icon(Icons.home, size: 24),
+              icon: const Icon(Icons.elevator, size: 24),
               label: const Text(
-                'Back to Dashboard',
+                'Select Lift →',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ⭐ CHANGED: "Skip" Button (Secondary Action)
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.grey.shade400),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: Icon(Icons.home, size: 20, color: Colors.grey.shade700),
+              label: Text(
+                'Skip & Go to Dashboard',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
               ),
             ),
           ),
@@ -321,9 +342,6 @@ Time: ${DateTime.now().toString()}
     );
   }
 
-  // ============================================
-  // BOOKING SUMMARY CARD
-  // ============================================
   Widget _buildBookingSummaryCard() {
     return Card(
       elevation: 4,
@@ -363,9 +381,6 @@ Time: ${DateTime.now().toString()}
     );
   }
 
-  // ============================================
-  // VEHICLE TYPE SELECTOR
-  // ============================================
   Widget _buildVehicleTypeSelector() {
     return Card(
       elevation: 4,
@@ -437,9 +452,6 @@ Time: ${DateTime.now().toString()}
     );
   }
 
-  // ============================================
-  // PRICING INFO CARD
-  // ============================================
   Widget _buildPricingInfoCard() {
     return Card(
       elevation: 4,
@@ -506,9 +518,6 @@ Time: ${DateTime.now().toString()}
     );
   }
 
-  // ============================================
-  // PAYMENT BUTTON
-  // ============================================
   Widget _buildPaymentButton() {
     return SizedBox(
       width: double.infinity,
@@ -540,9 +549,6 @@ Time: ${DateTime.now().toString()}
     );
   }
 
-  // ============================================
-  // CANCEL BUTTON
-  // ============================================
   Widget _buildCancelButton() {
     return TextButton(
       onPressed: isProcessing
@@ -583,9 +589,6 @@ Time: ${DateTime.now().toString()}
     );
   }
 
-  // ============================================
-  // HELPER WIDGETS
-  // ============================================
   Widget _buildSummaryRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
